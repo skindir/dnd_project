@@ -1,90 +1,491 @@
 package com.example.dna_project;
 
+import android.content.SharedPreferences;
+import android.graphics.Typeface;
 import android.os.Bundle;
-import android.view.MenuItem;
-import android.view.Menu;
-
-import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.snackbar.Snackbar;
-import com.google.android.material.navigation.NavigationView;
+import android.text.InputType;
+import android.view.Gravity;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.GridLayout;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
-import androidx.navigation.fragment.NavHostFragment;
-import androidx.navigation.ui.AppBarConfiguration;
-import androidx.navigation.ui.NavigationUI;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.dna_project.databinding.ActivityMainBinding;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    private AppBarConfiguration mAppBarConfiguration;
+    private static final String PREFS_NAME = "dnd_characters";
+    private static final String KEY_CHARACTERS = "characters";
+    private static final int MAX_CHARACTERS = 15;
+
+    private static final int TAB_INVENTORY = 1;
+    private static final int TAB_SPELLBOOK = 2;
+    private static final int TAB_STATS = 3;
+
+    private final List<DndCharacter> characters = new ArrayList<>();
+    private SharedPreferences preferences;
+    private FrameLayout root;
+    private DndCharacter selectedCharacter;
+    private int selectedTab = TAB_STATS;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        root = new FrameLayout(this);
+        setContentView(root);
+        loadCharacters();
+        showCharacterSelect();
+    }
 
-        ActivityMainBinding binding = ActivityMainBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
+    private void showCharacterSelect() {
+        selectedCharacter = null;
+        selectedTab = TAB_STATS;
+        root.removeAllViews();
 
-        setSupportActionBar(binding.appBarMain.toolbar);
-        if (binding.appBarMain.fab != null) {
-            binding.appBarMain.fab.setOnClickListener(view -> Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                    .setAction("Action", null).setAnchorView(R.id.fab).show());
+        ScrollView scrollView = new ScrollView(this);
+        LinearLayout screen = verticalLayout(20);
+        screen.setPadding(dp(20), dp(28), dp(20), dp(28));
+        scrollView.addView(screen);
+
+        TextView title = title("Выбор персонажа");
+        screen.addView(title);
+
+        TextView counter = bodyText("Персонажей: " + characters.size() + " / " + MAX_CHARACTERS);
+        counter.setPadding(0, dp(4), 0, dp(16));
+        screen.addView(counter);
+
+        Button createButton = primaryButton("Создать нового персонажа");
+        createButton.setEnabled(characters.size() < MAX_CHARACTERS);
+        createButton.setOnClickListener(view -> {
+            if (characters.size() >= MAX_CHARACTERS) {
+                Toast.makeText(this, "Можно создать максимум 15 персонажей", Toast.LENGTH_SHORT).show();
+            } else {
+                showCreateCharacter();
+            }
+        });
+        screen.addView(createButton);
+
+        if (characters.isEmpty()) {
+            TextView empty = bodyText("Пока нет персонажей. Создайте первого героя для кампании.");
+            empty.setGravity(Gravity.CENTER);
+            empty.setPadding(0, dp(40), 0, 0);
+            screen.addView(empty);
+        } else {
+            for (DndCharacter character : characters) {
+                screen.addView(characterRow(character));
+            }
         }
-        NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager().findFragmentById(R.id.nav_host_fragment_content_main);
-        assert navHostFragment != null;
-        NavController navController = navHostFragment.getNavController();
 
-        NavigationView navigationView = binding.navView;
-        if (navigationView != null) {
-            mAppBarConfiguration = new AppBarConfiguration.Builder(
-                    R.id.nav_transform, R.id.nav_reflow, R.id.nav_slideshow, R.id.nav_settings)
-                    .setOpenableLayout(binding.drawerLayout)
-                    .build();
-            NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
-            NavigationUI.setupWithNavController(navigationView, navController);
+        root.addView(scrollView);
+    }
+
+    private void showCreateCharacter() {
+        root.removeAllViews();
+
+        ScrollView scrollView = new ScrollView(this);
+        LinearLayout screen = verticalLayout(14);
+        screen.setPadding(dp(20), dp(28), dp(20), dp(28));
+        scrollView.addView(screen);
+
+        screen.addView(title("Новый персонаж"));
+
+        TextInputEditText nameInput = textInput(screen, "Имя персонажа", "Элара");
+        TextInputEditText classInput = textInput(screen, "Класс", "Воин, маг, плут...");
+
+        GridLayout statGrid = new GridLayout(this);
+        statGrid.setColumnCount(2);
+        statGrid.setUseDefaultMargins(true);
+        screen.addView(statGrid);
+
+        TextInputEditText strength = numberInput(statGrid, "Сила", 10);
+        TextInputEditText dexterity = numberInput(statGrid, "Ловкость", 10);
+        TextInputEditText intelligence = numberInput(statGrid, "Интеллект", 10);
+        TextInputEditText charisma = numberInput(statGrid, "Харизма", 10);
+        TextInputEditText wisdom = numberInput(statGrid, "Мудрость", 10);
+        TextInputEditText speed = numberInput(statGrid, "Скорость", 30);
+        TextInputEditText armorClass = numberInput(statGrid, "Класс брони", 10);
+
+        Button saveButton = primaryButton("Сохранить персонажа");
+        saveButton.setOnClickListener(view -> {
+            String name = value(nameInput).trim();
+            if (name.isEmpty()) {
+                Toast.makeText(this, "Введите имя персонажа", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            DndCharacter character = new DndCharacter(
+                    name,
+                    valueOrDefault(classInput, "Без класса"),
+                    intValue(strength, 10),
+                    intValue(dexterity, 10),
+                    intValue(intelligence, 10),
+                    intValue(charisma, 10),
+                    intValue(wisdom, 10),
+                    intValue(speed, 30),
+                    intValue(armorClass, 10)
+            );
+            characters.add(character);
+            saveCharacters();
+            selectedCharacter = character;
+            selectedTab = TAB_STATS;
+            showCharacterSheet();
+        });
+        screen.addView(saveButton);
+
+        Button backButton = secondaryButton("Назад к выбору");
+        backButton.setOnClickListener(view -> showCharacterSelect());
+        screen.addView(backButton);
+
+        root.addView(scrollView);
+    }
+
+    private void showCharacterSheet() {
+        if (selectedCharacter == null) {
+            showCharacterSelect();
+            return;
         }
 
-        BottomNavigationView bottomNavigationView = binding.appBarMain.contentMain.bottomNavView;
-        if (bottomNavigationView != null) {
-            mAppBarConfiguration = new AppBarConfiguration.Builder(
-                    R.id.nav_transform, R.id.nav_reflow, R.id.nav_slideshow)
-                    .build();
-            NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
-            NavigationUI.setupWithNavController(bottomNavigationView, navController);
+        root.removeAllViews();
+        LinearLayout screen = verticalLayout(0);
+
+        LinearLayout header = verticalLayout(6);
+        header.setPadding(dp(20), dp(24), dp(20), dp(12));
+        TextView name = title(selectedCharacter.name);
+        TextView heroClass = bodyText(selectedCharacter.characterClass);
+        header.addView(name);
+        header.addView(heroClass);
+        screen.addView(header);
+
+        FrameLayout content = new FrameLayout(this);
+        LinearLayout.LayoutParams contentParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                0,
+                1f
+        );
+        screen.addView(content, contentParams);
+
+        BottomNavigationView navigation = new BottomNavigationView(this);
+        navigation.getMenu().add(0, TAB_INVENTORY, 0, "Инвентарь").setIcon(android.R.drawable.ic_menu_agenda);
+        navigation.getMenu().add(0, TAB_SPELLBOOK, 1, "Заклинания").setIcon(android.R.drawable.ic_menu_upload);
+        navigation.getMenu().add(0, TAB_STATS, 2, "Характеристики").setIcon(android.R.drawable.ic_menu_info_details);
+        navigation.setSelectedItemId(selectedTab);
+        navigation.setOnItemSelectedListener(item -> {
+            selectedTab = item.getItemId();
+            renderTab(content);
+            return true;
+        });
+        screen.addView(navigation, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(64)
+        ));
+
+        root.addView(screen);
+        renderTab(content);
+    }
+
+    private void renderTab(FrameLayout content) {
+        content.removeAllViews();
+
+        ScrollView scrollView = new ScrollView(this);
+        LinearLayout body = verticalLayout(14);
+        body.setPadding(dp(20), dp(12), dp(20), dp(24));
+        scrollView.addView(body);
+
+        if (selectedTab == TAB_STATS) {
+            body.addView(sectionTitle("Характеристики"));
+            addStat(body, "Ловкость", selectedCharacter.dexterity);
+            addStat(body, "Сила", selectedCharacter.strength);
+            addStat(body, "Интеллект", selectedCharacter.intelligence);
+            addStat(body, "Харизма", selectedCharacter.charisma);
+            addStat(body, "Мудрость", selectedCharacter.wisdom);
+            addStat(body, "Скорость", selectedCharacter.speed);
+            addStat(body, "Класс брони", selectedCharacter.armorClass);
+        } else if (selectedTab == TAB_INVENTORY) {
+            body.addView(sectionTitle("Инвентарь"));
+            body.addView(bodyText("Здесь будет список предметов персонажа."));
+            body.addView(bodyText("Сейчас инвентарь пуст."));
+        } else {
+            body.addView(sectionTitle("Книга заклинаний"));
+            body.addView(bodyText("Здесь будет книга заклинаний персонажа."));
+            body.addView(bodyText("Сейчас заклинаний нет."));
+        }
+
+        Button selectOther = secondaryButton("Выбрать другого персонажа");
+        selectOther.setOnClickListener(view -> showCharacterSelect());
+        body.addView(selectOther);
+
+        content.addView(scrollView);
+    }
+
+    private View characterRow(DndCharacter character) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(dp(14), dp(12), dp(14), dp(12));
+        row.setBackgroundColor(0xFFEFE7DC);
+
+        ImageView avatar = new ImageView(this);
+        int avatarNumber = Math.abs(character.name.hashCode()) % 16 + 1;
+        int avatarId = getResources().getIdentifier("avatar_" + avatarNumber, "drawable", getPackageName());
+        if (avatarId != 0) {
+            avatar.setImageResource(avatarId);
+        } else {
+            avatar.setImageResource(android.R.drawable.sym_def_app_icon);
+        }
+        row.addView(avatar, new LinearLayout.LayoutParams(dp(52), dp(52)));
+
+        LinearLayout textBox = verticalLayout(2);
+        textBox.setPadding(dp(14), 0, 0, 0);
+        TextView name = sectionTitle(character.name);
+        TextView details = bodyText(character.characterClass + " | КБ " + character.armorClass + " | Скорость " + character.speed);
+        textBox.addView(name);
+        textBox.addView(details);
+        row.addView(textBox, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        row.setOnClickListener(view -> {
+            selectedCharacter = character;
+            selectedTab = TAB_STATS;
+            showCharacterSheet();
+        });
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        params.setMargins(0, dp(12), 0, 0);
+        row.setLayoutParams(params);
+        return row;
+    }
+
+    private void addStat(LinearLayout parent, String label, int value) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(dp(14), dp(12), dp(14), dp(12));
+        row.setBackgroundColor(0xFFF7F2EA);
+
+        TextView name = bodyText(label);
+        name.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        row.addView(name, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView number = sectionTitle(String.valueOf(value));
+        number.setGravity(Gravity.END);
+        row.addView(number);
+
+        parent.addView(row);
+    }
+
+    private TextInputEditText textInput(LinearLayout parent, String label, String hint) {
+        TextInputLayout layout = new TextInputLayout(this);
+        layout.setHint(label);
+        TextInputEditText input = new TextInputEditText(layout.getContext());
+        input.setSingleLine(true);
+        input.setHint(hint);
+        layout.addView(input);
+        parent.addView(layout);
+        return input;
+    }
+
+    private TextInputEditText numberInput(GridLayout parent, String label, int defaultValue) {
+        TextInputLayout layout = new TextInputLayout(this);
+        layout.setHint(label);
+        TextInputEditText input = new TextInputEditText(layout.getContext());
+        input.setInputType(InputType.TYPE_CLASS_NUMBER);
+        input.setText(String.valueOf(defaultValue));
+        layout.addView(input);
+
+        GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+        params.width = 0;
+        params.height = GridLayout.LayoutParams.WRAP_CONTENT;
+        params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+        params.setMargins(0, dp(4), 0, dp(4));
+        layout.setLayoutParams(params);
+        parent.addView(layout);
+        return input;
+    }
+
+    private LinearLayout verticalLayout(int spacing) {
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        if (spacing > 0) {
+            layout.setShowDividers(LinearLayout.SHOW_DIVIDER_NONE);
+        }
+        return layout;
+    }
+
+    private TextView title(String text) {
+        TextView view = new TextView(this);
+        view.setText(text);
+        view.setTextSize(28);
+        view.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        view.setTextColor(0xFF2B2118);
+        return view;
+    }
+
+    private TextView sectionTitle(String text) {
+        TextView view = new TextView(this);
+        view.setText(text);
+        view.setTextSize(19);
+        view.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        view.setTextColor(0xFF33261B);
+        return view;
+    }
+
+    private TextView bodyText(String text) {
+        TextView view = new TextView(this);
+        view.setText(text);
+        view.setTextSize(16);
+        view.setTextColor(0xFF5F5043);
+        return view;
+    }
+
+    private Button primaryButton(String text) {
+        Button button = new Button(this);
+        button.setText(text);
+        button.setAllCaps(false);
+        return button;
+    }
+
+    private Button secondaryButton(String text) {
+        Button button = primaryButton(text);
+        button.setBackgroundColor(0xFFE4D7C7);
+        button.setTextColor(0xFF2B2118);
+        return button;
+    }
+
+    private String value(EditText input) {
+        return input.getText() == null ? "" : input.getText().toString();
+    }
+
+    private String valueOrDefault(EditText input, String defaultValue) {
+        String value = value(input).trim();
+        return value.isEmpty() ? defaultValue : value;
+    }
+
+    private int intValue(EditText input, int defaultValue) {
+        try {
+            return Integer.parseInt(value(input).trim());
+        } catch (NumberFormatException exception) {
+            return defaultValue;
         }
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        boolean result = super.onCreateOptionsMenu(menu);
-        // Using findViewById because NavigationView exists in different layout files
-        // between w600dp and w1240dp
-        NavigationView navView = findViewById(R.id.nav_view);
-        if (navView == null) {
-            // The navigation drawer already has the items including the items in the overflow menu
-            // We only inflate the overflow menu if the navigation drawer isn't visible
-            getMenuInflater().inflate(R.menu.overflow, menu);
+    private int dp(int value) {
+        return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
+    }
+
+    private void loadCharacters() {
+        characters.clear();
+        String rawCharacters = preferences.getString(KEY_CHARACTERS, "[]");
+        try {
+            JSONArray array = new JSONArray(rawCharacters);
+            for (int i = 0; i < array.length(); i++) {
+                characters.add(DndCharacter.fromJson(array.getJSONObject(i)));
+            }
+        } catch (JSONException exception) {
+            preferences.edit().remove(KEY_CHARACTERS).apply();
         }
-        return result;
+    }
+
+    private void saveCharacters() {
+        JSONArray array = new JSONArray();
+        for (DndCharacter character : characters) {
+            array.put(character.toJson());
+        }
+        preferences.edit().putString(KEY_CHARACTERS, array.toString()).apply();
     }
 
     @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        if (item.getItemId() == R.id.nav_settings) {
-            NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
-            navController.navigate(R.id.nav_settings);
+    public void onBackPressed() {
+        if (selectedCharacter != null) {
+            showCharacterSelect();
+        } else {
+            super.onBackPressed();
         }
-        return super.onOptionsItemSelected(item);
     }
 
-    @Override
-    public boolean onSupportNavigateUp() {
-        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
-        return NavigationUI.navigateUp(navController, mAppBarConfiguration)
-                || super.onSupportNavigateUp();
+    private static class DndCharacter {
+        final String name;
+        final String characterClass;
+        final int strength;
+        final int dexterity;
+        final int intelligence;
+        final int charisma;
+        final int wisdom;
+        final int speed;
+        final int armorClass;
+
+        DndCharacter(
+                String name,
+                String characterClass,
+                int strength,
+                int dexterity,
+                int intelligence,
+                int charisma,
+                int wisdom,
+                int speed,
+                int armorClass
+        ) {
+            this.name = name;
+            this.characterClass = characterClass;
+            this.strength = strength;
+            this.dexterity = dexterity;
+            this.intelligence = intelligence;
+            this.charisma = charisma;
+            this.wisdom = wisdom;
+            this.speed = speed;
+            this.armorClass = armorClass;
+        }
+
+        JSONObject toJson() {
+            JSONObject object = new JSONObject();
+            try {
+                object.put("name", name);
+                object.put("class", characterClass);
+                object.put("strength", strength);
+                object.put("dexterity", dexterity);
+                object.put("intelligence", intelligence);
+                object.put("charisma", charisma);
+                object.put("wisdom", wisdom);
+                object.put("speed", speed);
+                object.put("armorClass", armorClass);
+            } catch (JSONException ignored) {
+                // Values are local primitive fields, so JSON errors are not expected here.
+            }
+            return object;
+        }
+
+        static DndCharacter fromJson(@NonNull JSONObject object) {
+            return new DndCharacter(
+                    object.optString("name", "Без имени"),
+                    object.optString("class", "Без класса"),
+                    object.optInt("strength", 10),
+                    object.optInt("dexterity", 10),
+                    object.optInt("intelligence", 10),
+                    object.optInt("charisma", 10),
+                    object.optInt("wisdom", 10),
+                    object.optInt("speed", 30),
+                    object.optInt("armorClass", 10)
+            );
+        }
     }
 }
