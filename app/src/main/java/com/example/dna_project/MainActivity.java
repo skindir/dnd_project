@@ -37,8 +37,8 @@ public class MainActivity extends AppCompatActivity {
     private static final int MAX_CHARACTERS = 15;
 
     private static final int TAB_INVENTORY = 1;
-    private static final int TAB_SPELLBOOK = 2;
-    private static final int TAB_STATS = 3;
+    private static final int TAB_STATS = 2;
+    private static final int TAB_SPELLBOOK = 3;
 
     private final List<DndCharacter> characters = new ArrayList<>();
     private SharedPreferences preferences;
@@ -90,8 +90,8 @@ public class MainActivity extends AppCompatActivity {
             empty.setPadding(0, dp(40), 0, 0);
             screen.addView(empty);
         } else {
-            for (DndCharacter character : characters) {
-                screen.addView(characterRow(character));
+            for (int i = 0; i < characters.size(); i++) {
+                screen.addView(characterRow(characters.get(i), i + 1));
             }
         }
 
@@ -167,14 +167,6 @@ public class MainActivity extends AppCompatActivity {
         root.removeAllViews();
         LinearLayout screen = verticalLayout(0);
 
-        LinearLayout header = verticalLayout(6);
-        header.setPadding(dp(20), dp(24), dp(20), dp(12));
-        TextView name = title(selectedCharacter.name);
-        TextView heroClass = bodyText(selectedCharacter.characterClass);
-        header.addView(name);
-        header.addView(heroClass);
-        screen.addView(header);
-
         FrameLayout content = new FrameLayout(this);
         LinearLayout.LayoutParams contentParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -185,8 +177,8 @@ public class MainActivity extends AppCompatActivity {
 
         BottomNavigationView navigation = new BottomNavigationView(this);
         navigation.getMenu().add(0, TAB_INVENTORY, 0, "Инвентарь").setIcon(android.R.drawable.ic_menu_agenda);
-        navigation.getMenu().add(0, TAB_SPELLBOOK, 1, "Заклинания").setIcon(android.R.drawable.ic_menu_upload);
-        navigation.getMenu().add(0, TAB_STATS, 2, "Характеристики").setIcon(android.R.drawable.ic_menu_info_details);
+        navigation.getMenu().add(0, TAB_STATS, 1, "Характеристики").setIcon(android.R.drawable.ic_menu_info_details);
+        navigation.getMenu().add(0, TAB_SPELLBOOK, 2, "Книга заклинаний").setIcon(android.R.drawable.ic_menu_upload);
         navigation.setSelectedItemId(selectedTab);
         navigation.setOnItemSelectedListener(item -> {
             selectedTab = item.getItemId();
@@ -196,6 +188,13 @@ public class MainActivity extends AppCompatActivity {
         screen.addView(navigation, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 dp(64)
+        ));
+
+        Button selectOther = secondaryButton("Сменить персонажа");
+        selectOther.setOnClickListener(view -> showCharacterSelect());
+        screen.addView(selectOther, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
         ));
 
         root.addView(screen);
@@ -212,6 +211,8 @@ public class MainActivity extends AppCompatActivity {
 
         if (selectedTab == TAB_STATS) {
             body.addView(sectionTitle("Характеристики"));
+            addStat(body, "Имя", selectedCharacter.name);
+            addStat(body, "Класс", selectedCharacter.characterClass);
             addStat(body, "Ловкость", selectedCharacter.dexterity);
             addStat(body, "Сила", selectedCharacter.strength);
             addStat(body, "Интеллект", selectedCharacter.intelligence);
@@ -221,7 +222,11 @@ public class MainActivity extends AppCompatActivity {
             addStat(body, "Класс брони", selectedCharacter.armorClass);
         } else if (selectedTab == TAB_INVENTORY) {
             body.addView(sectionTitle("Инвентарь"));
-            body.addView(bodyText("Здесь будет список предметов персонажа."));
+            body.addView(sectionTitle("Надето на персонаже"));
+            body.addView(bodyText("Оружие: пусто"));
+            body.addView(bodyText("Броня: пусто"));
+            body.addView(bodyText("Аксессуары: пусто"));
+            body.addView(sectionTitle("В рюкзаке"));
             body.addView(bodyText("Сейчас инвентарь пуст."));
         } else {
             body.addView(sectionTitle("Книга заклинаний"));
@@ -229,14 +234,10 @@ public class MainActivity extends AppCompatActivity {
             body.addView(bodyText("Сейчас заклинаний нет."));
         }
 
-        Button selectOther = secondaryButton("Выбрать другого персонажа");
-        selectOther.setOnClickListener(view -> showCharacterSelect());
-        body.addView(selectOther);
-
         content.addView(scrollView);
     }
 
-    private View characterRow(DndCharacter character) {
+    private View characterRow(DndCharacter character, int number) {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
@@ -255,8 +256,8 @@ public class MainActivity extends AppCompatActivity {
 
         LinearLayout textBox = verticalLayout(2);
         textBox.setPadding(dp(14), 0, 0, 0);
-        TextView name = sectionTitle(character.name);
-        TextView details = bodyText(character.characterClass + " | КБ " + character.armorClass + " | Скорость " + character.speed);
+        TextView name = sectionTitle("Персонаж " + number);
+        TextView details = bodyText("Нажмите, чтобы открыть лист персонажа");
         textBox.addView(name);
         textBox.addView(details);
         row.addView(textBox, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
@@ -277,6 +278,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void addStat(LinearLayout parent, String label, int value) {
+        addStat(parent, label, String.valueOf(value));
+    }
+
+    private void addStat(LinearLayout parent, String label, String value) {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
@@ -287,7 +292,7 @@ public class MainActivity extends AppCompatActivity {
         name.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         row.addView(name, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
-        TextView number = sectionTitle(String.valueOf(value));
+        TextView number = sectionTitle(value);
         number.setGravity(Gravity.END);
         row.addView(number);
 
