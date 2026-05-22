@@ -17,6 +17,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -90,8 +91,8 @@ public class MainActivity extends AppCompatActivity {
             empty.setPadding(0, dp(40), 0, 0);
             screen.addView(empty);
         } else {
-            for (int i = 0; i < characters.size(); i++) {
-                screen.addView(characterRow(characters.get(i), i + 1));
+            for (DndCharacter character : characters) {
+                screen.addView(characterRow(character));
             }
         }
 
@@ -110,6 +111,7 @@ public class MainActivity extends AppCompatActivity {
 
         TextInputEditText nameInput = textInput(screen, "Имя персонажа", "Элара");
         TextInputEditText classInput = textInput(screen, "Класс", "Воин, маг, плут...");
+        TextInputEditText level = numberInput(screen, "Уровень", 1);
 
         GridLayout statGrid = new GridLayout(this);
         statGrid.setColumnCount(2);
@@ -135,6 +137,7 @@ public class MainActivity extends AppCompatActivity {
             DndCharacter character = new DndCharacter(
                     name,
                     valueOrDefault(classInput, "Без класса"),
+                    intValue(level, 1),
                     intValue(strength, 10),
                     intValue(dexterity, 10),
                     intValue(intelligence, 10),
@@ -213,6 +216,7 @@ public class MainActivity extends AppCompatActivity {
             body.addView(sectionTitle("Характеристики"));
             addStat(body, "Имя", selectedCharacter.name);
             addStat(body, "Класс", selectedCharacter.characterClass);
+            addStat(body, "Уровень", selectedCharacter.level);
             addStat(body, "Ловкость", selectedCharacter.dexterity);
             addStat(body, "Сила", selectedCharacter.strength);
             addStat(body, "Интеллект", selectedCharacter.intelligence);
@@ -223,21 +227,21 @@ public class MainActivity extends AppCompatActivity {
         } else if (selectedTab == TAB_INVENTORY) {
             body.addView(sectionTitle("Инвентарь"));
             body.addView(sectionTitle("Надето на персонаже"));
-            body.addView(bodyText("Оружие: пусто"));
-            body.addView(bodyText("Броня: пусто"));
-            body.addView(bodyText("Аксессуары: пусто"));
+            addEquipmentGrid(body);
             body.addView(sectionTitle("В рюкзаке"));
             body.addView(bodyText("Сейчас инвентарь пуст."));
         } else {
             body.addView(sectionTitle("Книга заклинаний"));
-            body.addView(bodyText("Здесь будет книга заклинаний персонажа."));
-            body.addView(bodyText("Сейчас заклинаний нет."));
+            Button addSpell = primaryButton("Добавить заклинание");
+            addSpell.setOnClickListener(view -> showAddSpellDialog(-1));
+            body.addView(addSpell);
+            addSpellLevels(body);
         }
 
         content.addView(scrollView);
     }
 
-    private View characterRow(DndCharacter character, int number) {
+    private View characterRow(DndCharacter character) {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
@@ -256,8 +260,8 @@ public class MainActivity extends AppCompatActivity {
 
         LinearLayout textBox = verticalLayout(2);
         textBox.setPadding(dp(14), 0, 0, 0);
-        TextView name = sectionTitle("Персонаж " + number);
-        TextView details = bodyText("Нажмите, чтобы открыть лист персонажа");
+        TextView name = sectionTitle(character.name);
+        TextView details = bodyText(character.characterClass + " | Уровень " + character.level);
         textBox.addView(name);
         textBox.addView(details);
         row.addView(textBox, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
@@ -275,6 +279,123 @@ public class MainActivity extends AppCompatActivity {
         params.setMargins(0, dp(12), 0, 0);
         row.setLayoutParams(params);
         return row;
+    }
+
+    private void addEquipmentGrid(LinearLayout parent) {
+        GridLayout grid = new GridLayout(this);
+        grid.setColumnCount(2);
+        grid.setUseDefaultMargins(true);
+
+        String[] slots = {
+                "Шлем",
+                "Нагрудник",
+                "Штаны",
+                "Пояс",
+                "Ботинки",
+                "Перчатки",
+                "Наплечники",
+                "Кольцо 1",
+                "Кольцо 2",
+                "Серьга 1",
+                "Серьга 2",
+                "Кулон",
+                "Первичное оружие",
+                "Вторичное оружие"
+        };
+
+        for (String slot : slots) {
+            Button button = secondaryButton(slot + "\nПусто");
+            button.setMinHeight(dp(64));
+            button.setGravity(Gravity.CENTER);
+            button.setOnClickListener(view -> Toast.makeText(this, slot + ": пусто", Toast.LENGTH_SHORT).show());
+
+            GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+            params.width = 0;
+            params.height = GridLayout.LayoutParams.WRAP_CONTENT;
+            params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+            params.setMargins(0, dp(4), 0, dp(4));
+            button.setLayoutParams(params);
+            grid.addView(button);
+        }
+
+        parent.addView(grid);
+    }
+
+    private void addSpellLevels(LinearLayout parent) {
+        for (int level = 0; level <= 9; level++) {
+            parent.addView(spellLevelFrame(level));
+        }
+    }
+
+    private View spellLevelFrame(int spellLevel) {
+        LinearLayout frame = verticalLayout(8);
+        frame.setPadding(dp(12), dp(10), dp(12), dp(12));
+        frame.setBackgroundColor(0xFFF7F2EA);
+
+        LinearLayout header = new LinearLayout(this);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+
+        TextView title = sectionTitle("Уровень " + spellLevel);
+        header.addView(title, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        Button addButton = secondaryButton("+");
+        addButton.setTextSize(22);
+        addButton.setOnClickListener(view -> showAddSpellDialog(spellLevel));
+        header.addView(addButton, new LinearLayout.LayoutParams(dp(48), dp(48)));
+        frame.addView(header);
+
+        List<String> spells = selectedCharacter.spellbook.get(spellLevel);
+        if (spells.isEmpty()) {
+            frame.addView(bodyText("Список пуст."));
+        } else {
+            for (String spell : spells) {
+                frame.addView(bodyText("- " + spell));
+            }
+        }
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        params.setMargins(0, dp(8), 0, dp(8));
+        frame.setLayoutParams(params);
+        return frame;
+    }
+
+    private void showAddSpellDialog(int presetLevel) {
+        LinearLayout form = verticalLayout(10);
+        form.setPadding(dp(20), dp(8), dp(20), 0);
+
+        TextInputEditText spellName = textInput(form, "Название заклинания", "Огненный шар");
+        TextInputEditText spellLevel = null;
+        if (presetLevel < 0) {
+            spellLevel = numberInput(form, "Уровень заклинания 0-9", 0);
+        }
+
+        TextInputEditText finalSpellLevel = spellLevel;
+        new AlertDialog.Builder(this)
+                .setTitle(presetLevel >= 0 ? "Добавить в уровень " + presetLevel : "Добавить заклинание")
+                .setView(form)
+                .setPositiveButton("Добавить", (dialog, which) -> {
+                    String name = value(spellName).trim();
+                    if (name.isEmpty()) {
+                        Toast.makeText(this, "Введите название заклинания", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    int level = presetLevel >= 0 ? presetLevel : intValue(finalSpellLevel, 0);
+                    if (level < 0 || level > 9) {
+                        Toast.makeText(this, "Уровень должен быть от 0 до 9", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    selectedCharacter.spellbook.get(level).add(name);
+                    saveCharacters();
+                    showCharacterSheet();
+                })
+                .setNegativeButton("Отмена", null)
+                .show();
     }
 
     private void addStat(LinearLayout parent, String label, int value) {
@@ -324,6 +445,17 @@ public class MainActivity extends AppCompatActivity {
         params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
         params.setMargins(0, dp(4), 0, dp(4));
         layout.setLayoutParams(params);
+        parent.addView(layout);
+        return input;
+    }
+
+    private TextInputEditText numberInput(LinearLayout parent, String label, int defaultValue) {
+        TextInputLayout layout = new TextInputLayout(this);
+        layout.setHint(label);
+        TextInputEditText input = new TextInputEditText(layout.getContext());
+        input.setInputType(InputType.TYPE_CLASS_NUMBER);
+        input.setText(String.valueOf(defaultValue));
+        layout.addView(input);
         parent.addView(layout);
         return input;
     }
@@ -431,6 +563,7 @@ public class MainActivity extends AppCompatActivity {
     private static class DndCharacter {
         final String name;
         final String characterClass;
+        final int level;
         final int strength;
         final int dexterity;
         final int intelligence;
@@ -438,10 +571,12 @@ public class MainActivity extends AppCompatActivity {
         final int wisdom;
         final int speed;
         final int armorClass;
+        final List<List<String>> spellbook;
 
         DndCharacter(
                 String name,
                 String characterClass,
+                int level,
                 int strength,
                 int dexterity,
                 int intelligence,
@@ -450,8 +585,25 @@ public class MainActivity extends AppCompatActivity {
                 int speed,
                 int armorClass
         ) {
+            this(name, characterClass, level, strength, dexterity, intelligence, charisma, wisdom, speed, armorClass, createEmptySpellbook());
+        }
+
+        DndCharacter(
+                String name,
+                String characterClass,
+                int level,
+                int strength,
+                int dexterity,
+                int intelligence,
+                int charisma,
+                int wisdom,
+                int speed,
+                int armorClass,
+                List<List<String>> spellbook
+        ) {
             this.name = name;
             this.characterClass = characterClass;
+            this.level = level;
             this.strength = strength;
             this.dexterity = dexterity;
             this.intelligence = intelligence;
@@ -459,6 +611,7 @@ public class MainActivity extends AppCompatActivity {
             this.wisdom = wisdom;
             this.speed = speed;
             this.armorClass = armorClass;
+            this.spellbook = spellbook;
         }
 
         JSONObject toJson() {
@@ -466,6 +619,7 @@ public class MainActivity extends AppCompatActivity {
             try {
                 object.put("name", name);
                 object.put("class", characterClass);
+                object.put("level", level);
                 object.put("strength", strength);
                 object.put("dexterity", dexterity);
                 object.put("intelligence", intelligence);
@@ -473,6 +627,16 @@ public class MainActivity extends AppCompatActivity {
                 object.put("wisdom", wisdom);
                 object.put("speed", speed);
                 object.put("armorClass", armorClass);
+
+                JSONArray spellbookArray = new JSONArray();
+                for (List<String> levelSpells : spellbook) {
+                    JSONArray spellsArray = new JSONArray();
+                    for (String spell : levelSpells) {
+                        spellsArray.put(spell);
+                    }
+                    spellbookArray.put(spellsArray);
+                }
+                object.put("spellbook", spellbookArray);
             } catch (JSONException ignored) {
                 // Values are local primitive fields, so JSON errors are not expected here.
             }
@@ -483,14 +647,45 @@ public class MainActivity extends AppCompatActivity {
             return new DndCharacter(
                     object.optString("name", "Без имени"),
                     object.optString("class", "Без класса"),
+                    object.optInt("level", 1),
                     object.optInt("strength", 10),
                     object.optInt("dexterity", 10),
                     object.optInt("intelligence", 10),
                     object.optInt("charisma", 10),
                     object.optInt("wisdom", 10),
                     object.optInt("speed", 30),
-                    object.optInt("armorClass", 10)
+                    object.optInt("armorClass", 10),
+                    readSpellbook(object.optJSONArray("spellbook"))
             );
+        }
+
+        private static List<List<String>> createEmptySpellbook() {
+            List<List<String>> spellbook = new ArrayList<>();
+            for (int level = 0; level <= 9; level++) {
+                spellbook.add(new ArrayList<>());
+            }
+            return spellbook;
+        }
+
+        private static List<List<String>> readSpellbook(JSONArray savedSpellbook) {
+            List<List<String>> spellbook = createEmptySpellbook();
+            if (savedSpellbook == null) {
+                return spellbook;
+            }
+
+            for (int level = 0; level <= 9 && level < savedSpellbook.length(); level++) {
+                JSONArray spells = savedSpellbook.optJSONArray(level);
+                if (spells == null) {
+                    continue;
+                }
+                for (int index = 0; index < spells.length(); index++) {
+                    String spell = spells.optString(index, "").trim();
+                    if (!spell.isEmpty()) {
+                        spellbook.get(level).add(spell);
+                    }
+                }
+            }
+            return spellbook;
         }
     }
 }
