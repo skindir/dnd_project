@@ -40,6 +40,21 @@ public class MainActivity extends AppCompatActivity {
     private static final int TAB_INVENTORY = 1;
     private static final int TAB_STATS = 2;
     private static final int TAB_SPELLBOOK = 3;
+    private static final String[] CHARACTER_CLASSES = {
+            "Бард",
+            "Варвар",
+            "Воин",
+            "Волшебник",
+            "Друид",
+            "Жрец",
+            "Изобретатель",
+            "Колдун",
+            "Монах",
+            "Паладин",
+            "Плут",
+            "Следопыт",
+            "Чародей"
+    };
 
     private final List<DndCharacter> characters = new ArrayList<>();
     private SharedPreferences preferences;
@@ -52,6 +67,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         root = new FrameLayout(this);
+        root.setBackgroundResource(R.drawable.dnd_screen_bg);
         setContentView(root);
         loadCharacters();
         showCharacterSelect();
@@ -63,8 +79,11 @@ public class MainActivity extends AppCompatActivity {
         root.removeAllViews();
 
         ScrollView scrollView = new ScrollView(this);
+        scrollView.setPadding(dp(12), dp(12), dp(12), dp(12));
+        scrollView.setClipToPadding(false);
         LinearLayout screen = verticalLayout(20);
         screen.setPadding(dp(20), dp(28), dp(20), dp(28));
+        screen.setBackgroundResource(R.drawable.dnd_panel_bg);
         scrollView.addView(screen);
 
         TextView title = title("Выбор персонажа");
@@ -103,14 +122,30 @@ public class MainActivity extends AppCompatActivity {
         root.removeAllViews();
 
         ScrollView scrollView = new ScrollView(this);
+        scrollView.setPadding(dp(12), dp(12), dp(12), dp(12));
+        scrollView.setClipToPadding(false);
         LinearLayout screen = verticalLayout(14);
         screen.setPadding(dp(20), dp(28), dp(20), dp(28));
+        screen.setBackgroundResource(R.drawable.dnd_panel_bg);
         scrollView.addView(screen);
 
         screen.addView(title("Новый персонаж"));
 
         TextInputEditText nameInput = textInput(screen, "Имя персонажа", "Элара");
-        TextInputEditText classInput = textInput(screen, "Класс", "Воин, маг, плут...");
+        TextView selectedClass = bodyText("Класс не выбран");
+        selectedClass.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        selectedClass.setPadding(0, dp(4), 0, dp(4));
+        Button classButton = secondaryButton("Добавить класс");
+        final String[] classValue = {""};
+        classButton.setOnClickListener(view -> new AlertDialog.Builder(this)
+                .setTitle("Выберите класс")
+                .setItems(CHARACTER_CLASSES, (dialog, which) -> {
+                    classValue[0] = CHARACTER_CLASSES[which];
+                    selectedClass.setText("Класс: " + classValue[0]);
+                })
+                .show());
+        screen.addView(selectedClass);
+        screen.addView(classButton);
         TextInputEditText level = numberInput(screen, "Уровень", 1);
 
         GridLayout statGrid = new GridLayout(this);
@@ -136,7 +171,7 @@ public class MainActivity extends AppCompatActivity {
 
             DndCharacter character = new DndCharacter(
                     name,
-                    valueOrDefault(classInput, "Без класса"),
+                    classValue[0].isEmpty() ? "Без класса" : classValue[0],
                     intValue(level, 1),
                     intValue(strength, 10),
                     intValue(dexterity, 10),
@@ -208,8 +243,11 @@ public class MainActivity extends AppCompatActivity {
         content.removeAllViews();
 
         ScrollView scrollView = new ScrollView(this);
+        scrollView.setPadding(dp(12), dp(12), dp(12), dp(12));
+        scrollView.setClipToPadding(false);
         LinearLayout body = verticalLayout(14);
         body.setPadding(dp(20), dp(12), dp(20), dp(24));
+        body.setBackgroundResource(R.drawable.dnd_panel_bg);
         scrollView.addView(body);
 
         if (selectedTab == TAB_STATS) {
@@ -227,6 +265,13 @@ public class MainActivity extends AppCompatActivity {
         } else if (selectedTab == TAB_INVENTORY) {
             body.addView(sectionTitle("Инвентарь"));
             body.addView(sectionTitle("Надето на персонаже"));
+            ImageView portrait = new ImageView(this);
+            portrait.setImageResource(classImageResource(selectedCharacter.characterClass));
+            portrait.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            body.addView(portrait, new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    dp(180)
+            ));
             addEquipmentGrid(body);
             body.addView(sectionTitle("В рюкзаке"));
             body.addView(bodyText("Сейчас инвентарь пуст."));
@@ -246,16 +291,11 @@ public class MainActivity extends AppCompatActivity {
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
         row.setPadding(dp(14), dp(12), dp(14), dp(12));
-        row.setBackgroundColor(0xFFEFE7DC);
+        row.setBackgroundResource(R.drawable.dnd_panel_bg);
 
         ImageView avatar = new ImageView(this);
-        int avatarNumber = Math.abs(character.name.hashCode()) % 16 + 1;
-        int avatarId = getResources().getIdentifier("avatar_" + avatarNumber, "drawable", getPackageName());
-        if (avatarId != 0) {
-            avatar.setImageResource(avatarId);
-        } else {
-            avatar.setImageResource(android.R.drawable.sym_def_app_icon);
-        }
+        avatar.setImageResource(classImageResource(character.characterClass));
+        avatar.setScaleType(ImageView.ScaleType.CENTER_CROP);
         row.addView(avatar, new LinearLayout.LayoutParams(dp(52), dp(52)));
 
         LinearLayout textBox = verticalLayout(2);
@@ -307,6 +347,9 @@ public class MainActivity extends AppCompatActivity {
             Button button = secondaryButton(slot + "\nПусто");
             button.setMinHeight(dp(64));
             button.setGravity(Gravity.CENTER);
+            button.setAlpha(0.55f);
+            button.setBackgroundResource(R.drawable.dnd_slot_bg);
+            button.setTextColor(0xFFF7E7C4);
             button.setOnClickListener(view -> Toast.makeText(this, slot + ": пусто", Toast.LENGTH_SHORT).show());
 
             GridLayout.LayoutParams params = new GridLayout.LayoutParams();
@@ -321,6 +364,39 @@ public class MainActivity extends AppCompatActivity {
         parent.addView(grid);
     }
 
+    private int classImageResource(String characterClass) {
+        switch (characterClass) {
+            case "Бард":
+                return R.drawable.class_bard;
+            case "Варвар":
+                return R.drawable.class_barbarian;
+            case "Воин":
+                return R.drawable.class_warrior;
+            case "Волшебник":
+                return R.drawable.class_wizard;
+            case "Друид":
+                return R.drawable.class_druid;
+            case "Жрец":
+                return R.drawable.class_cleric;
+            case "Изобретатель":
+                return R.drawable.class_artificer;
+            case "Колдун":
+                return R.drawable.class_warlock;
+            case "Монах":
+                return R.drawable.class_monk;
+            case "Паладин":
+                return R.drawable.class_paladin;
+            case "Плут":
+                return R.drawable.class_rogue;
+            case "Следопыт":
+                return R.drawable.class_ranger;
+            case "Чародей":
+                return R.drawable.class_sorcerer;
+            default:
+                return R.drawable.avatar_1;
+        }
+    }
+
     private void addSpellLevels(LinearLayout parent) {
         for (int level = 0; level <= 9; level++) {
             parent.addView(spellLevelFrame(level));
@@ -330,7 +406,7 @@ public class MainActivity extends AppCompatActivity {
     private View spellLevelFrame(int spellLevel) {
         LinearLayout frame = verticalLayout(8);
         frame.setPadding(dp(12), dp(10), dp(12), dp(12));
-        frame.setBackgroundColor(0xFFF7F2EA);
+        frame.setBackgroundResource(R.drawable.dnd_panel_bg);
 
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.HORIZONTAL);
