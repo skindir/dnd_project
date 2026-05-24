@@ -265,14 +265,7 @@ public class MainActivity extends AppCompatActivity {
         } else if (selectedTab == TAB_INVENTORY) {
             body.addView(sectionTitle("Инвентарь"));
             body.addView(sectionTitle("Надето на персонаже"));
-            ImageView portrait = new ImageView(this);
-            portrait.setImageResource(classImageResource(selectedCharacter.characterClass));
-            portrait.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            body.addView(portrait, new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    dp(180)
-            ));
-            addEquipmentGrid(body);
+            addEquipmentLayout(body);
             body.addView(sectionTitle("В рюкзаке"));
             body.addView(bodyText("Сейчас инвентарь пуст."));
         } else {
@@ -306,6 +299,13 @@ public class MainActivity extends AppCompatActivity {
         textBox.addView(details);
         row.addView(textBox, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
+        Button deleteButton = secondaryButton("Удалить");
+        deleteButton.setOnClickListener(view -> confirmDeleteCharacter(character));
+        row.addView(deleteButton, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+
         row.setOnClickListener(view -> {
             selectedCharacter = character;
             selectedTab = TAB_STATS;
@@ -321,47 +321,66 @@ public class MainActivity extends AppCompatActivity {
         return row;
     }
 
-    private void addEquipmentGrid(LinearLayout parent) {
-        GridLayout grid = new GridLayout(this);
-        grid.setColumnCount(2);
-        grid.setUseDefaultMargins(true);
+    private void confirmDeleteCharacter(DndCharacter character) {
+        new AlertDialog.Builder(this)
+                .setTitle("Удалить персонажа?")
+                .setMessage(character.name + " будет удалён из списка.")
+                .setPositiveButton("Удалить", (dialog, which) -> {
+                    characters.remove(character);
+                    saveCharacters();
+                    showCharacterSelect();
+                })
+                .setNegativeButton("Отмена", null)
+                .show();
+    }
 
-        String[] slots = {
-                "Шлем",
-                "Нагрудник",
-                "Штаны",
-                "Пояс",
-                "Ботинки",
-                "Перчатки",
-                "Наплечники",
-                "Кольцо 1",
-                "Кольцо 2",
-                "Серьга 1",
-                "Серьга 2",
-                "Кулон",
-                "Первичное оружие",
-                "Вторичное оружие"
-        };
+    private void addEquipmentLayout(LinearLayout parent) {
+        FrameLayout equipment = new FrameLayout(this);
+        equipment.setBackgroundResource(R.drawable.dnd_slot_bg);
 
-        for (String slot : slots) {
-            Button button = secondaryButton(slot + "\nПусто");
-            button.setMinHeight(dp(64));
-            button.setGravity(Gravity.CENTER);
-            button.setAlpha(0.55f);
-            button.setBackgroundResource(R.drawable.dnd_slot_bg);
-            button.setTextColor(0xFFF7E7C4);
-            button.setOnClickListener(view -> Toast.makeText(this, slot + ": пусто", Toast.LENGTH_SHORT).show());
+        ImageView background = new ImageView(this);
+        background.setImageResource(classImageResource(selectedCharacter.characterClass));
+        background.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        background.setAlpha(0.92f);
+        equipment.addView(background, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+        ));
 
-            GridLayout.LayoutParams params = new GridLayout.LayoutParams();
-            params.width = 0;
-            params.height = GridLayout.LayoutParams.WRAP_CONTENT;
-            params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
-            params.setMargins(0, dp(4), 0, dp(4));
-            button.setLayoutParams(params);
-            grid.addView(button);
-        }
+        addEquipmentSlot(equipment, "Шлем", 144, 16, 64, 52);
+        addEquipmentSlot(equipment, "Наплечники", 104, 80, 144, 44);
+        addEquipmentSlot(equipment, "Нагрудник", 128, 132, 96, 82);
+        addEquipmentSlot(equipment, "Пояс", 128, 224, 96, 38);
+        addEquipmentSlot(equipment, "Штаны", 136, 270, 80, 62);
+        addEquipmentSlot(equipment, "Ботинки", 112, 340, 128, 48);
+        addEquipmentSlot(equipment, "Перчатки", 52, 174, 56, 62);
+        addEquipmentSlot(equipment, "Кольцо 1", 22, 48, 42, 42);
+        addEquipmentSlot(equipment, "Кольцо 2", 288, 48, 42, 42);
+        addEquipmentSlot(equipment, "Серьга 1", 72, 22, 36, 36);
+        addEquipmentSlot(equipment, "Серьга 2", 244, 22, 36, 36);
+        addEquipmentSlot(equipment, "Кулон", 154, 76, 44, 44);
+        addEquipmentSlot(equipment, "Первичное оружие", 18, 250, 74, 120);
+        addEquipmentSlot(equipment, "Вторичное оружие", 260, 250, 74, 120);
 
-        parent.addView(grid);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(420)
+        );
+        params.setMargins(0, dp(8), 0, dp(12));
+        parent.addView(equipment, params);
+    }
+
+    private void addEquipmentSlot(FrameLayout equipment, String slot, int left, int top, int width, int height) {
+        View slotView = new View(this);
+        slotView.setBackgroundResource(R.drawable.dnd_empty_slot_bg);
+        slotView.setAlpha(0.48f);
+        slotView.setContentDescription(slot);
+        slotView.setOnClickListener(view -> Toast.makeText(this, slot + ": пусто", Toast.LENGTH_SHORT).show());
+
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(dp(width), dp(height));
+        params.leftMargin = dp(left);
+        params.topMargin = dp(top);
+        equipment.addView(slotView, params);
     }
 
     private int classImageResource(String characterClass) {
