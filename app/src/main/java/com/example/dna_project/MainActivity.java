@@ -56,6 +56,26 @@ public class MainActivity extends AppCompatActivity {
             "Следопыт",
             "Чародей"
     };
+    private static final String[] LANGUAGE_OPTIONS = {
+            "Абиссал",
+            "Друидский",
+            "Гигантский",
+            "Инфернальный",
+            "Язык воров (ксант)",
+            "Небесный",
+            "Подземный",
+            "Первичный",
+            "Общий",
+            "Орочий",
+            "Эльфийский",
+            "Гномий",
+            "Гоблинский",
+            "Полуэльфийский",
+            "Полуросликовый",
+            "Сильванский",
+            "Тифлингский",
+            "Подводный"
+    };
 
     private final List<DndCharacter> characters = new ArrayList<>();
     private SharedPreferences preferences;
@@ -151,6 +171,26 @@ public class MainActivity extends AppCompatActivity {
         TextInputEditText race = textInput(screen, "Раса", "Человек");
         TextInputEditText background = textInput(screen, "Предыстория", "Солдат");
         TextInputEditText alignment = textInput(screen, "Мировоззрение", "Нейтральное");
+        TextView selectedLanguagesLabel = bodyText("Языки не выбраны");
+        selectedLanguagesLabel.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        selectedLanguagesLabel.setPadding(0, dp(4), 0, dp(4));
+        Button languagesButton = secondaryButton("Выбрать языки");
+        final boolean[] languageSelections = new boolean[LANGUAGE_OPTIONS.length];
+        languagesButton.setOnClickListener(view -> {
+            boolean[] dialogSelections = languageSelections.clone();
+            new AlertDialog.Builder(this)
+                    .setTitle("Выберите языки")
+                    .setMultiChoiceItems(LANGUAGE_OPTIONS, dialogSelections, (dialog, which, isChecked) ->
+                            dialogSelections[which] = isChecked)
+                    .setPositiveButton("Готово", (dialog, which) -> {
+                        System.arraycopy(dialogSelections, 0, languageSelections, 0, languageSelections.length);
+                        selectedLanguagesLabel.setText("Языки: " + languagesSummary(languageSelections));
+                    })
+                    .setNegativeButton("Отмена", null)
+                    .show();
+        });
+        screen.addView(selectedLanguagesLabel);
+        screen.addView(languagesButton);
 
         GridLayout statGrid = new GridLayout(this);
         statGrid.setColumnCount(2);
@@ -211,7 +251,8 @@ public class MainActivity extends AppCompatActivity {
                     valueOrDefault(ideals, "Нет"),
                     valueOrDefault(bonds, "Нет"),
                     valueOrDefault(flaws, "Нет"),
-                    intValue(initiative, 0)
+                    intValue(initiative, 0),
+                    collectSelectedLanguages(languageSelections)
             );
             characters.add(character);
             saveCharacters();
@@ -309,6 +350,7 @@ public class MainActivity extends AppCompatActivity {
             addStat(body, "Идеалы", selectedCharacter.ideals);
             addStat(body, "Узы", selectedCharacter.bonds);
             addStat(body, "Недостатки", selectedCharacter.flaws);
+            addLanguagesTable(body, selectedCharacter.languages);
         } else if (selectedTab == TAB_INVENTORY) {
             body.addView(sectionTitle("Инвентарь"));
             body.addView(sectionTitle("Надето на персонаже"));
@@ -577,6 +619,75 @@ public class MainActivity extends AppCompatActivity {
         parent.addView(row);
     }
 
+    private void addLanguagesTable(LinearLayout parent, List<String> languages) {
+        LinearLayout table = verticalLayout(0);
+        table.setPadding(dp(14), dp(12), dp(14), dp(12));
+        table.setBackgroundColor(0xFFF7F2EA);
+
+        table.addView(sectionTitle("Языки"));
+        if (languages.isEmpty()) {
+            TextView empty = bodyText("Не выбраны");
+            empty.setPadding(0, dp(8), 0, 0);
+            table.addView(empty);
+        } else {
+            GridLayout languageGrid = new GridLayout(this);
+            languageGrid.setColumnCount(2);
+            languageGrid.setUseDefaultMargins(true);
+            languageGrid.setPadding(0, dp(8), 0, 0);
+
+            addLanguageCell(languageGrid, "#", true, 0.25f);
+            addLanguageCell(languageGrid, "Язык", true, 1f);
+            for (int index = 0; index < languages.size(); index++) {
+                addLanguageCell(languageGrid, String.valueOf(index + 1), false, 0.25f);
+                addLanguageCell(languageGrid, languages.get(index), false, 1f);
+            }
+            table.addView(languageGrid);
+        }
+
+        parent.addView(table);
+    }
+
+    private void addLanguageCell(GridLayout table, String text, boolean header, float weight) {
+        TextView cell = header ? sectionTitle(text) : bodyText(text);
+        cell.setPadding(dp(8), dp(6), dp(8), dp(6));
+        if (header) {
+            cell.setBackgroundColor(0xFFE4D7C7);
+        }
+
+        GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+        params.width = 0;
+        params.height = GridLayout.LayoutParams.WRAP_CONTENT;
+        params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, weight);
+        cell.setLayoutParams(params);
+        table.addView(cell);
+    }
+
+    private String languagesSummary(boolean[] languageSelections) {
+        List<String> languages = collectSelectedLanguages(languageSelections);
+        if (languages.isEmpty()) {
+            return "не выбраны";
+        }
+
+        StringBuilder summary = new StringBuilder();
+        for (String language : languages) {
+            if (summary.length() > 0) {
+                summary.append(", ");
+            }
+            summary.append(language);
+        }
+        return summary.toString();
+    }
+
+    private List<String> collectSelectedLanguages(boolean[] languageSelections) {
+        List<String> languages = new ArrayList<>();
+        for (int index = 0; index < LANGUAGE_OPTIONS.length && index < languageSelections.length; index++) {
+            if (languageSelections[index]) {
+                languages.add(LANGUAGE_OPTIONS[index]);
+            }
+        }
+        return languages;
+    }
+
     private TextInputEditText textInput(LinearLayout parent, String label, String hint) {
         TextInputLayout layout = new TextInputLayout(this);
         layout.setHint(label);
@@ -757,6 +868,7 @@ public class MainActivity extends AppCompatActivity {
         final String bonds;
         final String flaws;
         final int initiative;
+        final List<String> languages;
         final List<List<String>> spellbook;
 
         DndCharacter(
@@ -797,63 +909,7 @@ public class MainActivity extends AppCompatActivity {
                     "Нет",
                     "Нет",
                     0,
-                    createEmptySpellbook()
-            );
-        }
-
-        DndCharacter(
-                String name,
-                String characterClass,
-                int level,
-                int strength,
-                int dexterity,
-                int intelligence,
-                int charisma,
-                int wisdom,
-                int speed,
-                int armorClass,
-                String race,
-                String background,
-                String alignment,
-                int currentHp,
-                int maxHp,
-                int temporaryHp,
-                String hitDice,
-                int proficiencyBonus,
-                int perception,
-                String featuresAndTraits,
-                String personalityTraits,
-                String ideals,
-                String bonds,
-                String flaws,
-                int initiative
-        ) {
-            this(
-                    name,
-                    characterClass,
-                    level,
-                    strength,
-                    dexterity,
-                    intelligence,
-                    charisma,
-                    wisdom,
-                    speed,
-                    armorClass,
-                    race,
-                    background,
-                    alignment,
-                    currentHp,
-                    maxHp,
-                    temporaryHp,
-                    hitDice,
-                    proficiencyBonus,
-                    perception,
-                    featuresAndTraits,
-                    personalityTraits,
-                    ideals,
-                    bonds,
-                    flaws,
-                    initiative,
+                    new ArrayList<>(),
                     createEmptySpellbook()
             );
         }
@@ -884,6 +940,66 @@ public class MainActivity extends AppCompatActivity {
                 String bonds,
                 String flaws,
                 int initiative,
+                List<String> languages
+        ) {
+            this(
+                    name,
+                    characterClass,
+                    level,
+                    strength,
+                    dexterity,
+                    intelligence,
+                    charisma,
+                    wisdom,
+                    speed,
+                    armorClass,
+                    race,
+                    background,
+                    alignment,
+                    currentHp,
+                    maxHp,
+                    temporaryHp,
+                    hitDice,
+                    proficiencyBonus,
+                    perception,
+                    featuresAndTraits,
+                    personalityTraits,
+                    ideals,
+                    bonds,
+                    flaws,
+                    initiative,
+                    languages,
+                    createEmptySpellbook()
+            );
+        }
+
+        DndCharacter(
+                String name,
+                String characterClass,
+                int level,
+                int strength,
+                int dexterity,
+                int intelligence,
+                int charisma,
+                int wisdom,
+                int speed,
+                int armorClass,
+                String race,
+                String background,
+                String alignment,
+                int currentHp,
+                int maxHp,
+                int temporaryHp,
+                String hitDice,
+                int proficiencyBonus,
+                int perception,
+                String featuresAndTraits,
+                String personalityTraits,
+                String ideals,
+                String bonds,
+                String flaws,
+                int initiative,
+                List<String> languages,
                 List<List<String>> spellbook
         ) {
             this.name = name;
@@ -911,6 +1027,7 @@ public class MainActivity extends AppCompatActivity {
             this.bonds = bonds;
             this.flaws = flaws;
             this.initiative = initiative;
+            this.languages = languages;
             this.spellbook = spellbook;
         }
 
@@ -942,6 +1059,11 @@ public class MainActivity extends AppCompatActivity {
                 object.put("bonds", bonds);
                 object.put("flaws", flaws);
                 object.put("initiative", initiative);
+                JSONArray languagesArray = new JSONArray();
+                for (String language : languages) {
+                    languagesArray.put(language);
+                }
+                object.put("languages", languagesArray);
 
                 JSONArray spellbookArray = new JSONArray();
                 for (List<String> levelSpells : spellbook) {
@@ -985,8 +1107,24 @@ public class MainActivity extends AppCompatActivity {
                     object.optString("bonds", "Нет"),
                     object.optString("flaws", "Нет"),
                     object.optInt("initiative", 0),
+                    readLanguages(object.optJSONArray("languages")),
                     readSpellbook(object.optJSONArray("spellbook"))
             );
+        }
+
+        private static List<String> readLanguages(JSONArray savedLanguages) {
+            List<String> languages = new ArrayList<>();
+            if (savedLanguages == null) {
+                return languages;
+            }
+
+            for (int index = 0; index < savedLanguages.length(); index++) {
+                String language = savedLanguages.optString(index, "").trim();
+                if (!language.isEmpty()) {
+                    languages.add(language);
+                }
+            }
+            return languages;
         }
 
         private static List<List<String>> createEmptySpellbook() {
