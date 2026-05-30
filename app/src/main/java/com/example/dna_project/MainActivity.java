@@ -76,6 +76,14 @@ public class MainActivity extends AppCompatActivity {
             "Тифлингский",
             "Подводный"
     };
+    private static final String[][] SAVING_THROW_GROUPS = {
+            {"Сила", "Атлетика"},
+            {"Ловкость", "Акробатика\nЛовкость рук\nСкрытность"},
+            {"Телосложение", "Нет"},
+            {"Интеллект", "Магия\nИстория\nРасследование\nПрирода\nРелигия"},
+            {"Мудрость", "Дрессировка Животных\nПроницательность\nМедицина\nВнимательность\nВыживание"},
+            {"Харизма", "Обман\nЗапугивание\nВыступление\nУбеждение"}
+    };
 
     private final List<DndCharacter> characters = new ArrayList<>();
     private SharedPreferences preferences;
@@ -199,6 +207,7 @@ public class MainActivity extends AppCompatActivity {
 
         TextInputEditText strength = numberInput(statGrid, "Сила", 10);
         TextInputEditText dexterity = numberInput(statGrid, "Ловкость", 10);
+        TextInputEditText constitution = numberInput(statGrid, "Телосложение", 10);
         TextInputEditText intelligence = numberInput(statGrid, "Интеллект", 10);
         TextInputEditText charisma = numberInput(statGrid, "Харизма", 10);
         TextInputEditText wisdom = numberInput(statGrid, "Мудрость", 10);
@@ -232,6 +241,7 @@ public class MainActivity extends AppCompatActivity {
                     intValue(level, 1),
                     intValue(strength, 10),
                     intValue(dexterity, 10),
+                    intValue(constitution, 10),
                     intValue(intelligence, 10),
                     intValue(charisma, 10),
                     intValue(wisdom, 10),
@@ -340,6 +350,7 @@ public class MainActivity extends AppCompatActivity {
             addStat(body, "Инициатива", selectedCharacter.initiative);
             addStat(body, "Ловкость", selectedCharacter.dexterity);
             addStat(body, "Сила", selectedCharacter.strength);
+            addStat(body, "Телосложение", selectedCharacter.constitution);
             addStat(body, "Интеллект", selectedCharacter.intelligence);
             addStat(body, "Харизма", selectedCharacter.charisma);
             addStat(body, "Мудрость", selectedCharacter.wisdom);
@@ -350,6 +361,7 @@ public class MainActivity extends AppCompatActivity {
             addStat(body, "Идеалы", selectedCharacter.ideals);
             addStat(body, "Узы", selectedCharacter.bonds);
             addStat(body, "Недостатки", selectedCharacter.flaws);
+            addSavingThrowsTable(body);
             addLanguagesTable(body, selectedCharacter.languages);
         } else if (selectedTab == TAB_INVENTORY) {
             body.addView(sectionTitle("Инвентарь"));
@@ -647,6 +659,29 @@ public class MainActivity extends AppCompatActivity {
         parent.addView(table);
     }
 
+    private void addSavingThrowsTable(LinearLayout parent) {
+        LinearLayout table = verticalLayout(0);
+        table.setPadding(dp(14), dp(12), dp(14), dp(12));
+        table.setBackgroundColor(0xFFF7F2EA);
+
+        table.addView(sectionTitle("Спасброски к характеристикам"));
+
+        GridLayout savingThrowGrid = new GridLayout(this);
+        savingThrowGrid.setColumnCount(2);
+        savingThrowGrid.setUseDefaultMargins(true);
+        savingThrowGrid.setPadding(0, dp(8), 0, 0);
+
+        addLanguageCell(savingThrowGrid, "Характеристика", true, 0.75f);
+        addLanguageCell(savingThrowGrid, "Список", true, 1.25f);
+        for (String[] group : SAVING_THROW_GROUPS) {
+            addLanguageCell(savingThrowGrid, group[0], false, 0.75f);
+            addLanguageCell(savingThrowGrid, group[1], false, 1.25f);
+        }
+
+        table.addView(savingThrowGrid);
+        parent.addView(table);
+    }
+
     private void addLanguageCell(GridLayout table, String text, boolean header, float weight) {
         TextView cell = header ? sectionTitle(text) : bodyText(text);
         cell.setPadding(dp(8), dp(6), dp(8), dp(6));
@@ -848,6 +883,7 @@ public class MainActivity extends AppCompatActivity {
         final int level;
         final int strength;
         final int dexterity;
+        final int constitution;
         final int intelligence;
         final int charisma;
         final int wisdom;
@@ -877,6 +913,7 @@ public class MainActivity extends AppCompatActivity {
                 int level,
                 int strength,
                 int dexterity,
+                int constitution,
                 int intelligence,
                 int charisma,
                 int wisdom,
@@ -889,6 +926,7 @@ public class MainActivity extends AppCompatActivity {
                     level,
                     strength,
                     dexterity,
+                    constitution,
                     intelligence,
                     charisma,
                     wisdom,
@@ -920,6 +958,7 @@ public class MainActivity extends AppCompatActivity {
                 int level,
                 int strength,
                 int dexterity,
+                int constitution,
                 int intelligence,
                 int charisma,
                 int wisdom,
@@ -948,6 +987,7 @@ public class MainActivity extends AppCompatActivity {
                     level,
                     strength,
                     dexterity,
+                    constitution,
                     intelligence,
                     charisma,
                     wisdom,
@@ -979,6 +1019,7 @@ public class MainActivity extends AppCompatActivity {
                 int level,
                 int strength,
                 int dexterity,
+                int constitution,
                 int intelligence,
                 int charisma,
                 int wisdom,
@@ -1007,6 +1048,7 @@ public class MainActivity extends AppCompatActivity {
             this.level = level;
             this.strength = strength;
             this.dexterity = dexterity;
+            this.constitution = constitution;
             this.intelligence = intelligence;
             this.charisma = charisma;
             this.wisdom = wisdom;
@@ -1039,6 +1081,7 @@ public class MainActivity extends AppCompatActivity {
                 object.put("level", level);
                 object.put("strength", strength);
                 object.put("dexterity", dexterity);
+                object.put("constitution", constitution);
                 object.put("intelligence", intelligence);
                 object.put("charisma", charisma);
                 object.put("wisdom", wisdom);
@@ -1087,6 +1130,7 @@ public class MainActivity extends AppCompatActivity {
                     object.optInt("level", 1),
                     object.optInt("strength", 10),
                     object.optInt("dexterity", 10),
+                    object.optInt("constitution", 10),
                     object.optInt("intelligence", 10),
                     object.optInt("charisma", 10),
                     object.optInt("wisdom", 10),
