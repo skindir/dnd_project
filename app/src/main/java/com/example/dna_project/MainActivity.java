@@ -79,10 +79,31 @@ public class MainActivity extends AppCompatActivity {
     private static final String[][] SAVING_THROW_GROUPS = {
             {"Сила", "Атлетика"},
             {"Ловкость", "Акробатика\nЛовкость рук\nСкрытность"},
-            {"Телосложение", "Нет"},
+            {"Телосложение", "Телосложение"},
             {"Интеллект", "Магия\nИстория\nРасследование\nПрирода\nРелигия"},
             {"Мудрость", "Дрессировка Животных\nПроницательность\nМедицина\nВнимательность\nВыживание"},
             {"Харизма", "Обман\nЗапугивание\nВыступление\nУбеждение"}
+    };
+    private static final String[] SAVING_THROW_OPTIONS = {
+            "Атлетика",
+            "Акробатика",
+            "Ловкость рук",
+            "Скрытность",
+            "Телосложение",
+            "Магия",
+            "История",
+            "Расследование",
+            "Природа",
+            "Религия",
+            "Дрессировка Животных",
+            "Проницательность",
+            "Медицина",
+            "Внимательность",
+            "Выживание",
+            "Обман",
+            "Запугивание",
+            "Выступление",
+            "Убеждение"
     };
 
     private final List<DndCharacter> characters = new ArrayList<>();
@@ -199,6 +220,26 @@ public class MainActivity extends AppCompatActivity {
         });
         screen.addView(selectedLanguagesLabel);
         screen.addView(languagesButton);
+        TextView selectedSavingThrowsLabel = bodyText("Спасброски не выбраны");
+        selectedSavingThrowsLabel.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        selectedSavingThrowsLabel.setPadding(0, dp(4), 0, dp(4));
+        Button savingThrowsButton = secondaryButton("Выбрать спасброски");
+        final boolean[] savingThrowSelections = new boolean[SAVING_THROW_OPTIONS.length];
+        savingThrowsButton.setOnClickListener(view -> {
+            boolean[] dialogSelections = savingThrowSelections.clone();
+            new AlertDialog.Builder(this)
+                    .setTitle("Выберите спасброски")
+                    .setMultiChoiceItems(SAVING_THROW_OPTIONS, dialogSelections, (dialog, which, isChecked) ->
+                            dialogSelections[which] = isChecked)
+                    .setPositiveButton("Готово", (dialog, which) -> {
+                        System.arraycopy(dialogSelections, 0, savingThrowSelections, 0, savingThrowSelections.length);
+                        selectedSavingThrowsLabel.setText("Спасброски: " + savingThrowsSummary(savingThrowSelections));
+                    })
+                    .setNegativeButton("Отмена", null)
+                    .show();
+        });
+        screen.addView(selectedSavingThrowsLabel);
+        screen.addView(savingThrowsButton);
 
         GridLayout statGrid = new GridLayout(this);
         statGrid.setColumnCount(2);
@@ -262,7 +303,8 @@ public class MainActivity extends AppCompatActivity {
                     valueOrDefault(bonds, "Нет"),
                     valueOrDefault(flaws, "Нет"),
                     intValue(initiative, 0),
-                    collectSelectedLanguages(languageSelections)
+                    collectSelectedLanguages(languageSelections),
+                    collectSelectedSavingThrows(savingThrowSelections)
             );
             characters.add(character);
             saveCharacters();
@@ -361,7 +403,7 @@ public class MainActivity extends AppCompatActivity {
             addStat(body, "Идеалы", selectedCharacter.ideals);
             addStat(body, "Узы", selectedCharacter.bonds);
             addStat(body, "Недостатки", selectedCharacter.flaws);
-            addSavingThrowsTable(body);
+            addSavingThrowsTable(body, selectedCharacter.savingThrows);
             addLanguagesTable(body, selectedCharacter.languages);
         } else if (selectedTab == TAB_INVENTORY) {
             body.addView(sectionTitle("Инвентарь"));
@@ -659,7 +701,7 @@ public class MainActivity extends AppCompatActivity {
         parent.addView(table);
     }
 
-    private void addSavingThrowsTable(LinearLayout parent) {
+    private void addSavingThrowsTable(LinearLayout parent, List<String> selectedSavingThrows) {
         LinearLayout table = verticalLayout(0);
         table.setPadding(dp(14), dp(12), dp(14), dp(12));
         table.setBackgroundColor(0xFFF7F2EA);
@@ -675,11 +717,42 @@ public class MainActivity extends AppCompatActivity {
         addLanguageCell(savingThrowGrid, "Список", true, 1.25f);
         for (String[] group : SAVING_THROW_GROUPS) {
             addLanguageCell(savingThrowGrid, group[0], false, 0.75f);
-            addLanguageCell(savingThrowGrid, group[1], false, 1.25f);
+            addSavingThrowOptionsCell(savingThrowGrid, group[1].split("\n"), selectedSavingThrows, 1.25f);
         }
 
         table.addView(savingThrowGrid);
         parent.addView(table);
+    }
+
+    private void addSavingThrowOptionsCell(
+            GridLayout table,
+            String[] savingThrows,
+            List<String> selectedSavingThrows,
+            float weight
+    ) {
+        LinearLayout cell = verticalLayout(0);
+        cell.setPadding(dp(8), dp(2), dp(8), dp(2));
+        for (String savingThrow : savingThrows) {
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setPadding(0, dp(4), 0, dp(4));
+
+            TextView indicator = bodyText(selectedSavingThrows.contains(savingThrow) ? "●" : "○");
+            indicator.setGravity(Gravity.CENTER);
+            row.addView(indicator, new LinearLayout.LayoutParams(dp(28), LinearLayout.LayoutParams.WRAP_CONTENT));
+
+            TextView name = bodyText(savingThrow);
+            row.addView(name, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+            cell.addView(row);
+        }
+
+        GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+        params.width = 0;
+        params.height = GridLayout.LayoutParams.WRAP_CONTENT;
+        params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, weight);
+        cell.setLayoutParams(params);
+        table.addView(cell);
     }
 
     private void addLanguageCell(GridLayout table, String text, boolean header, float weight) {
@@ -721,6 +794,32 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         return languages;
+    }
+
+    private String savingThrowsSummary(boolean[] savingThrowSelections) {
+        List<String> savingThrows = collectSelectedSavingThrows(savingThrowSelections);
+        if (savingThrows.isEmpty()) {
+            return "не выбраны";
+        }
+
+        StringBuilder summary = new StringBuilder();
+        for (String savingThrow : savingThrows) {
+            if (summary.length() > 0) {
+                summary.append(", ");
+            }
+            summary.append(savingThrow);
+        }
+        return summary.toString();
+    }
+
+    private List<String> collectSelectedSavingThrows(boolean[] savingThrowSelections) {
+        List<String> savingThrows = new ArrayList<>();
+        for (int index = 0; index < SAVING_THROW_OPTIONS.length && index < savingThrowSelections.length; index++) {
+            if (savingThrowSelections[index]) {
+                savingThrows.add(SAVING_THROW_OPTIONS[index]);
+            }
+        }
+        return savingThrows;
     }
 
     private TextInputEditText textInput(LinearLayout parent, String label, String hint) {
@@ -905,6 +1004,7 @@ public class MainActivity extends AppCompatActivity {
         final String flaws;
         final int initiative;
         final List<String> languages;
+        final List<String> savingThrows;
         final List<List<String>> spellbook;
 
         DndCharacter(
@@ -948,67 +1048,7 @@ public class MainActivity extends AppCompatActivity {
                     "Нет",
                     0,
                     new ArrayList<>(),
-                    createEmptySpellbook()
-            );
-        }
-
-        DndCharacter(
-                String name,
-                String characterClass,
-                int level,
-                int strength,
-                int dexterity,
-                int constitution,
-                int intelligence,
-                int charisma,
-                int wisdom,
-                int speed,
-                int armorClass,
-                String race,
-                String background,
-                String alignment,
-                int currentHp,
-                int maxHp,
-                int temporaryHp,
-                String hitDice,
-                int proficiencyBonus,
-                int perception,
-                String featuresAndTraits,
-                String personalityTraits,
-                String ideals,
-                String bonds,
-                String flaws,
-                int initiative,
-                List<String> languages
-        ) {
-            this(
-                    name,
-                    characterClass,
-                    level,
-                    strength,
-                    dexterity,
-                    constitution,
-                    intelligence,
-                    charisma,
-                    wisdom,
-                    speed,
-                    armorClass,
-                    race,
-                    background,
-                    alignment,
-                    currentHp,
-                    maxHp,
-                    temporaryHp,
-                    hitDice,
-                    proficiencyBonus,
-                    perception,
-                    featuresAndTraits,
-                    personalityTraits,
-                    ideals,
-                    bonds,
-                    flaws,
-                    initiative,
-                    languages,
+                    new ArrayList<>(),
                     createEmptySpellbook()
             );
         }
@@ -1041,6 +1081,70 @@ public class MainActivity extends AppCompatActivity {
                 String flaws,
                 int initiative,
                 List<String> languages,
+                List<String> savingThrows
+        ) {
+            this(
+                    name,
+                    characterClass,
+                    level,
+                    strength,
+                    dexterity,
+                    constitution,
+                    intelligence,
+                    charisma,
+                    wisdom,
+                    speed,
+                    armorClass,
+                    race,
+                    background,
+                    alignment,
+                    currentHp,
+                    maxHp,
+                    temporaryHp,
+                    hitDice,
+                    proficiencyBonus,
+                    perception,
+                    featuresAndTraits,
+                    personalityTraits,
+                    ideals,
+                    bonds,
+                    flaws,
+                    initiative,
+                    languages,
+                    savingThrows,
+                    createEmptySpellbook()
+            );
+        }
+
+        DndCharacter(
+                String name,
+                String characterClass,
+                int level,
+                int strength,
+                int dexterity,
+                int constitution,
+                int intelligence,
+                int charisma,
+                int wisdom,
+                int speed,
+                int armorClass,
+                String race,
+                String background,
+                String alignment,
+                int currentHp,
+                int maxHp,
+                int temporaryHp,
+                String hitDice,
+                int proficiencyBonus,
+                int perception,
+                String featuresAndTraits,
+                String personalityTraits,
+                String ideals,
+                String bonds,
+                String flaws,
+                int initiative,
+                List<String> languages,
+                List<String> savingThrows,
                 List<List<String>> spellbook
         ) {
             this.name = name;
@@ -1070,6 +1174,7 @@ public class MainActivity extends AppCompatActivity {
             this.flaws = flaws;
             this.initiative = initiative;
             this.languages = languages;
+            this.savingThrows = savingThrows;
             this.spellbook = spellbook;
         }
 
@@ -1107,6 +1212,11 @@ public class MainActivity extends AppCompatActivity {
                     languagesArray.put(language);
                 }
                 object.put("languages", languagesArray);
+                JSONArray savingThrowsArray = new JSONArray();
+                for (String savingThrow : savingThrows) {
+                    savingThrowsArray.put(savingThrow);
+                }
+                object.put("savingThrows", savingThrowsArray);
 
                 JSONArray spellbookArray = new JSONArray();
                 for (List<String> levelSpells : spellbook) {
@@ -1152,8 +1262,24 @@ public class MainActivity extends AppCompatActivity {
                     object.optString("flaws", "Нет"),
                     object.optInt("initiative", 0),
                     readLanguages(object.optJSONArray("languages")),
+                    readSavingThrows(object.optJSONArray("savingThrows")),
                     readSpellbook(object.optJSONArray("spellbook"))
             );
+        }
+
+        private static List<String> readSavingThrows(JSONArray savedSavingThrows) {
+            List<String> savingThrows = new ArrayList<>();
+            if (savedSavingThrows == null) {
+                return savingThrows;
+            }
+
+            for (int index = 0; index < savedSavingThrows.length(); index++) {
+                String savingThrow = savedSavingThrows.optString(index, "").trim();
+                if (!savingThrow.isEmpty()) {
+                    savingThrows.add(savingThrow);
+                }
+            }
+            return savingThrows;
         }
 
         private static List<String> readLanguages(JSONArray savedLanguages) {
