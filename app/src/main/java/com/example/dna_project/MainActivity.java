@@ -148,6 +148,9 @@ public class MainActivity extends AppCompatActivity {
         screen.addView(selectedClass);
         screen.addView(classButton);
         TextInputEditText level = numberInput(screen, "Уровень", 1);
+        TextInputEditText race = textInput(screen, "Раса", "Человек");
+        TextInputEditText background = textInput(screen, "Предыстория", "Солдат");
+        TextInputEditText alignment = textInput(screen, "Мировоззрение", "Нейтральное");
 
         GridLayout statGrid = new GridLayout(this);
         statGrid.setColumnCount(2);
@@ -161,6 +164,19 @@ public class MainActivity extends AppCompatActivity {
         TextInputEditText wisdom = numberInput(statGrid, "Мудрость", 10);
         TextInputEditText speed = numberInput(statGrid, "Скорость", 30);
         TextInputEditText armorClass = numberInput(statGrid, "Класс брони", 10);
+        TextInputEditText currentHp = numberInput(statGrid, "Текущие ХП", 10);
+        TextInputEditText maxHp = numberInput(statGrid, "Максимум ХП", 10);
+        TextInputEditText temporaryHp = numberInput(statGrid, "Временные ХП", 0);
+        TextInputEditText proficiencyBonus = numberInput(statGrid, "Бонус мастерства", 2);
+        TextInputEditText perception = numberInput(statGrid, "Восприятие", 10);
+        TextInputEditText initiative = numberInput(statGrid, "Инициатива", 0);
+
+        TextInputEditText hitDice = textInput(screen, "Кубик хитов", "d8");
+        TextInputEditText featuresAndTraits = multilineTextInput(screen, "Особенности и черты", "");
+        TextInputEditText personalityTraits = multilineTextInput(screen, "Черты характера", "");
+        TextInputEditText ideals = multilineTextInput(screen, "Идеалы", "");
+        TextInputEditText bonds = multilineTextInput(screen, "Узы", "");
+        TextInputEditText flaws = multilineTextInput(screen, "Недостатки", "");
 
         Button saveButton = primaryButton("Сохранить персонажа");
         saveButton.setOnClickListener(view -> {
@@ -180,7 +196,22 @@ public class MainActivity extends AppCompatActivity {
                     intValue(charisma, 10),
                     intValue(wisdom, 10),
                     intValue(speed, 30),
-                    intValue(armorClass, 10)
+                    intValue(armorClass, 10),
+                    valueOrDefault(race, "Не указана"),
+                    valueOrDefault(background, "Не указана"),
+                    valueOrDefault(alignment, "Не указано"),
+                    intValue(currentHp, 10),
+                    intValue(maxHp, 10),
+                    intValue(temporaryHp, 0),
+                    valueOrDefault(hitDice, "d8"),
+                    intValue(proficiencyBonus, 2),
+                    intValue(perception, 10),
+                    valueOrDefault(featuresAndTraits, "Нет"),
+                    valueOrDefault(personalityTraits, "Нет"),
+                    valueOrDefault(ideals, "Нет"),
+                    valueOrDefault(bonds, "Нет"),
+                    valueOrDefault(flaws, "Нет"),
+                    intValue(initiative, 0)
             );
             characters.add(character);
             saveCharacters();
@@ -256,6 +287,16 @@ public class MainActivity extends AppCompatActivity {
             addStat(body, "Имя", selectedCharacter.name);
             addStat(body, "Класс", selectedCharacter.characterClass);
             addStat(body, "Уровень", selectedCharacter.level);
+            addStat(body, "Раса", selectedCharacter.race);
+            addStat(body, "Предыстория", selectedCharacter.background);
+            addStat(body, "Мировоззрение", selectedCharacter.alignment);
+            addStat(body, "Текущие ХП", selectedCharacter.currentHp);
+            addStat(body, "Максимум ХП", selectedCharacter.maxHp);
+            addStat(body, "Временные ХП", selectedCharacter.temporaryHp);
+            addStat(body, "Кубик хитов", selectedCharacter.hitDice);
+            addStat(body, "Бонус мастерства", selectedCharacter.proficiencyBonus);
+            addStat(body, "Восприятие", selectedCharacter.perception);
+            addStat(body, "Инициатива", selectedCharacter.initiative);
             addStat(body, "Ловкость", selectedCharacter.dexterity);
             addStat(body, "Сила", selectedCharacter.strength);
             addStat(body, "Интеллект", selectedCharacter.intelligence);
@@ -263,6 +304,11 @@ public class MainActivity extends AppCompatActivity {
             addStat(body, "Мудрость", selectedCharacter.wisdom);
             addStat(body, "Скорость", selectedCharacter.speed);
             addStat(body, "Класс брони", selectedCharacter.armorClass);
+            addStat(body, "Особенности и черты", selectedCharacter.featuresAndTraits);
+            addStat(body, "Черты характера", selectedCharacter.personalityTraits);
+            addStat(body, "Идеалы", selectedCharacter.ideals);
+            addStat(body, "Узы", selectedCharacter.bonds);
+            addStat(body, "Недостатки", selectedCharacter.flaws);
         } else if (selectedTab == TAB_INVENTORY) {
             body.addView(sectionTitle("Инвентарь"));
             body.addView(sectionTitle("Надето на персонаже"));
@@ -509,17 +555,23 @@ public class MainActivity extends AppCompatActivity {
 
     private void addStat(LinearLayout parent, String label, String value) {
         LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setGravity(Gravity.CENTER_VERTICAL);
         row.setPadding(dp(14), dp(12), dp(14), dp(12));
         row.setBackgroundColor(0xFFF7F2EA);
 
+        boolean isLongValue = value.length() > 32 || value.contains("\n");
+        row.setOrientation(isLongValue ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL);
+        row.setGravity(isLongValue ? Gravity.START : Gravity.CENTER_VERTICAL);
+
         TextView name = bodyText(label);
         name.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        row.addView(name, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        if (isLongValue) {
+            row.addView(name);
+        } else {
+            row.addView(name, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        }
 
         TextView number = sectionTitle(value);
-        number.setGravity(Gravity.END);
+        number.setGravity(isLongValue ? Gravity.START : Gravity.END);
         row.addView(number);
 
         parent.addView(row);
@@ -530,6 +582,20 @@ public class MainActivity extends AppCompatActivity {
         layout.setHint(label);
         TextInputEditText input = new TextInputEditText(layout.getContext());
         input.setSingleLine(true);
+        input.setHint(hint);
+        layout.addView(input);
+        parent.addView(layout);
+        return input;
+    }
+
+    private TextInputEditText multilineTextInput(LinearLayout parent, String label, String hint) {
+        TextInputLayout layout = new TextInputLayout(this);
+        layout.setHint(label);
+        TextInputEditText input = new TextInputEditText(layout.getContext());
+        input.setMinLines(2);
+        input.setMaxLines(5);
+        input.setGravity(Gravity.TOP | Gravity.START);
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         input.setHint(hint);
         layout.addView(input);
         parent.addView(layout);
@@ -676,6 +742,21 @@ public class MainActivity extends AppCompatActivity {
         final int wisdom;
         final int speed;
         final int armorClass;
+        final String race;
+        final String background;
+        final String alignment;
+        final int currentHp;
+        final int maxHp;
+        final int temporaryHp;
+        final String hitDice;
+        final int proficiencyBonus;
+        final int perception;
+        final String featuresAndTraits;
+        final String personalityTraits;
+        final String ideals;
+        final String bonds;
+        final String flaws;
+        final int initiative;
         final List<List<String>> spellbook;
 
         DndCharacter(
@@ -690,7 +771,34 @@ public class MainActivity extends AppCompatActivity {
                 int speed,
                 int armorClass
         ) {
-            this(name, characterClass, level, strength, dexterity, intelligence, charisma, wisdom, speed, armorClass, createEmptySpellbook());
+            this(
+                    name,
+                    characterClass,
+                    level,
+                    strength,
+                    dexterity,
+                    intelligence,
+                    charisma,
+                    wisdom,
+                    speed,
+                    armorClass,
+                    "Не указана",
+                    "Не указана",
+                    "Не указано",
+                    10,
+                    10,
+                    0,
+                    "d8",
+                    2,
+                    10,
+                    "Нет",
+                    "Нет",
+                    "Нет",
+                    "Нет",
+                    "Нет",
+                    0,
+                    createEmptySpellbook()
+            );
         }
 
         DndCharacter(
@@ -704,6 +812,78 @@ public class MainActivity extends AppCompatActivity {
                 int wisdom,
                 int speed,
                 int armorClass,
+                String race,
+                String background,
+                String alignment,
+                int currentHp,
+                int maxHp,
+                int temporaryHp,
+                String hitDice,
+                int proficiencyBonus,
+                int perception,
+                String featuresAndTraits,
+                String personalityTraits,
+                String ideals,
+                String bonds,
+                String flaws,
+                int initiative
+        ) {
+            this(
+                    name,
+                    characterClass,
+                    level,
+                    strength,
+                    dexterity,
+                    intelligence,
+                    charisma,
+                    wisdom,
+                    speed,
+                    armorClass,
+                    race,
+                    background,
+                    alignment,
+                    currentHp,
+                    maxHp,
+                    temporaryHp,
+                    hitDice,
+                    proficiencyBonus,
+                    perception,
+                    featuresAndTraits,
+                    personalityTraits,
+                    ideals,
+                    bonds,
+                    flaws,
+                    initiative,
+                    createEmptySpellbook()
+            );
+        }
+
+        DndCharacter(
+                String name,
+                String characterClass,
+                int level,
+                int strength,
+                int dexterity,
+                int intelligence,
+                int charisma,
+                int wisdom,
+                int speed,
+                int armorClass,
+                String race,
+                String background,
+                String alignment,
+                int currentHp,
+                int maxHp,
+                int temporaryHp,
+                String hitDice,
+                int proficiencyBonus,
+                int perception,
+                String featuresAndTraits,
+                String personalityTraits,
+                String ideals,
+                String bonds,
+                String flaws,
+                int initiative,
                 List<List<String>> spellbook
         ) {
             this.name = name;
@@ -716,6 +896,21 @@ public class MainActivity extends AppCompatActivity {
             this.wisdom = wisdom;
             this.speed = speed;
             this.armorClass = armorClass;
+            this.race = race;
+            this.background = background;
+            this.alignment = alignment;
+            this.currentHp = currentHp;
+            this.maxHp = maxHp;
+            this.temporaryHp = temporaryHp;
+            this.hitDice = hitDice;
+            this.proficiencyBonus = proficiencyBonus;
+            this.perception = perception;
+            this.featuresAndTraits = featuresAndTraits;
+            this.personalityTraits = personalityTraits;
+            this.ideals = ideals;
+            this.bonds = bonds;
+            this.flaws = flaws;
+            this.initiative = initiative;
             this.spellbook = spellbook;
         }
 
@@ -732,6 +927,21 @@ public class MainActivity extends AppCompatActivity {
                 object.put("wisdom", wisdom);
                 object.put("speed", speed);
                 object.put("armorClass", armorClass);
+                object.put("race", race);
+                object.put("background", background);
+                object.put("alignment", alignment);
+                object.put("currentHp", currentHp);
+                object.put("maxHp", maxHp);
+                object.put("temporaryHp", temporaryHp);
+                object.put("hitDice", hitDice);
+                object.put("proficiencyBonus", proficiencyBonus);
+                object.put("perception", perception);
+                object.put("featuresAndTraits", featuresAndTraits);
+                object.put("personalityTraits", personalityTraits);
+                object.put("ideals", ideals);
+                object.put("bonds", bonds);
+                object.put("flaws", flaws);
+                object.put("initiative", initiative);
 
                 JSONArray spellbookArray = new JSONArray();
                 for (List<String> levelSpells : spellbook) {
@@ -760,6 +970,21 @@ public class MainActivity extends AppCompatActivity {
                     object.optInt("wisdom", 10),
                     object.optInt("speed", 30),
                     object.optInt("armorClass", 10),
+                    object.optString("race", "Не указана"),
+                    object.optString("background", "Не указана"),
+                    object.optString("alignment", "Не указано"),
+                    object.optInt("currentHp", 10),
+                    object.optInt("maxHp", 10),
+                    object.optInt("temporaryHp", 0),
+                    object.optString("hitDice", "d8"),
+                    object.optInt("proficiencyBonus", 2),
+                    object.optInt("perception", 10),
+                    object.optString("featuresAndTraits", "Нет"),
+                    object.optString("personalityTraits", "Нет"),
+                    object.optString("ideals", "Нет"),
+                    object.optString("bonds", "Нет"),
+                    object.optString("flaws", "Нет"),
+                    object.optInt("initiative", 0),
                     readSpellbook(object.optJSONArray("spellbook"))
             );
         }
