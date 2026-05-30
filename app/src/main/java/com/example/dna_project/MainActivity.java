@@ -10,6 +10,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.GridLayout;
+import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -43,6 +44,16 @@ public class MainActivity extends AppCompatActivity {
     private static final float EQUIPMENT_IMAGE_ASPECT_RATIO = 1754f / 1284f;
     private static final float EQUIPMENT_DESIGN_WIDTH = 1284f;
     private static final float EQUIPMENT_DESIGN_HEIGHT = 1754f;
+    private static final int INVENTORY_COLUMNS = 7;
+    private static final String[] INVENTORY_CATEGORIES = {
+            "Оружие",
+            "Броня",
+            "Аксесуары",
+            "Инструменты",
+            "Материалы",
+            "Прочее",
+            "Квестовые предметы"
+    };
     private static final String[] CHARACTER_CLASSES = {
             "Бард",
             "Варвар",
@@ -118,6 +129,7 @@ public class MainActivity extends AppCompatActivity {
     private FrameLayout root;
     private DndCharacter selectedCharacter;
     private int selectedTab = TAB_STATS;
+    private int selectedInventoryCategory = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -335,6 +347,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         root.removeAllViews();
+        selectedInventoryCategory = 0;
         LinearLayout screen = verticalLayout(0);
 
         FrameLayout content = new FrameLayout(this);
@@ -417,7 +430,7 @@ public class MainActivity extends AppCompatActivity {
             body.addView(sectionTitle("Надето на персонаже"));
             addEquipmentLayout(body);
             body.addView(sectionTitle("В рюкзаке"));
-            body.addView(bodyText("Сейчас инвентарь пуст."));
+            addBackpackLayout(body, content);
         } else {
             body.addView(sectionTitle("Книга заклинаний"));
             Button addSpell = primaryButton("Добавить заклинание");
@@ -427,6 +440,149 @@ public class MainActivity extends AppCompatActivity {
         }
 
         content.addView(scrollView);
+    }
+
+    private void addBackpackLayout(LinearLayout parent, FrameLayout content) {
+        LinearLayout backpack = verticalLayout(8);
+        backpack.setPadding(dp(8), dp(8), dp(8), dp(8));
+        backpack.setBackgroundResource(R.drawable.dnd_panel_bg);
+
+        addInventoryCategoryTabs(backpack, content);
+        addInventoryGrid(backpack);
+        addCoinBelt(backpack);
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        params.setMargins(0, dp(8), 0, dp(12));
+        parent.addView(backpack, params);
+    }
+
+    private void addInventoryCategoryTabs(LinearLayout parent, FrameLayout content) {
+        HorizontalScrollView scrollView = new HorizontalScrollView(this);
+        scrollView.setHorizontalScrollBarEnabled(false);
+        scrollView.setClipToPadding(false);
+
+        LinearLayout tabs = new LinearLayout(this);
+        tabs.setOrientation(LinearLayout.HORIZONTAL);
+        tabs.setPadding(0, 0, dp(4), 0);
+
+        for (int index = 0; index < INVENTORY_CATEGORIES.length; index++) {
+            Button tab = secondaryButton(INVENTORY_CATEGORIES[index]);
+            tab.setTextSize(13);
+            tab.setPadding(dp(10), 0, dp(10), 0);
+            tab.setBackgroundColor(index == selectedInventoryCategory ? 0xFFC8A86A : 0xFFE4D7C7);
+            final int categoryIndex = index;
+            tab.setOnClickListener(view -> {
+                selectedInventoryCategory = categoryIndex;
+                renderTab(content);
+            });
+
+            LinearLayout.LayoutParams tabParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    dp(40)
+            );
+            tabParams.setMargins(0, 0, dp(6), 0);
+            tabs.addView(tab, tabParams);
+        }
+
+        scrollView.addView(tabs);
+        parent.addView(scrollView, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(44)
+        ));
+    }
+
+    private void addInventoryGrid(LinearLayout parent) {
+        LinearLayout grid = verticalLayout(6);
+        grid.setPadding(0, dp(4), 0, dp(4));
+
+        int itemCount = 0;
+        int rows = Math.max(1, (itemCount / INVENTORY_COLUMNS) + 1);
+        for (int rowIndex = 0; rowIndex < rows; rowIndex++) {
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+
+            for (int columnIndex = 0; columnIndex < INVENTORY_COLUMNS; columnIndex++) {
+                int slotIndex = rowIndex * INVENTORY_COLUMNS + columnIndex;
+                TextView slot = new TextView(this);
+                slot.setBackgroundResource(R.drawable.dnd_empty_slot_bg);
+                slot.setTextColor(0xFF5F5043);
+                slot.setGravity(Gravity.CENTER);
+                slot.setContentDescription(INVENTORY_CATEGORIES[selectedInventoryCategory] + " " + (slotIndex + 1));
+                slot.setOnClickListener(view -> Toast.makeText(
+                        this,
+                        INVENTORY_CATEGORIES[selectedInventoryCategory] + ": пустая ячейка",
+                        Toast.LENGTH_SHORT
+                ).show());
+
+                LinearLayout.LayoutParams slotParams = new LinearLayout.LayoutParams(
+                        0,
+                        dp(76),
+                        1f
+                );
+                slotParams.setMargins(dp(3), dp(3), dp(3), dp(3));
+                row.addView(slot, slotParams);
+            }
+
+            grid.addView(row, new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            ));
+        }
+
+        parent.addView(grid, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+    }
+
+    private void addCoinBelt(LinearLayout parent) {
+        LinearLayout belt = new LinearLayout(this);
+        belt.setOrientation(LinearLayout.HORIZONTAL);
+        belt.setGravity(Gravity.CENTER_VERTICAL);
+        belt.setPadding(dp(6), dp(4), dp(6), dp(4));
+        belt.setBackgroundResource(R.drawable.dnd_slot_bg);
+
+        addCoinCell(belt, R.drawable.coin_platinum, "0");
+        addCoinCell(belt, R.drawable.coin_gold, "0");
+        addCoinCell(belt, R.drawable.coin_silver, "0");
+        addCoinCell(belt, R.drawable.coin_copper, "0");
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(50)
+        );
+        params.setMargins(0, dp(4), 0, 0);
+        parent.addView(belt, params);
+    }
+
+    private void addCoinCell(LinearLayout parent, int iconResource, String amount) {
+        LinearLayout coin = new LinearLayout(this);
+        coin.setOrientation(LinearLayout.HORIZONTAL);
+        coin.setGravity(Gravity.CENTER);
+
+        ImageView icon = new ImageView(this);
+        icon.setImageResource(iconResource);
+        icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        coin.addView(icon, new LinearLayout.LayoutParams(dp(28), dp(28)));
+
+        TextView value = bodyText(amount);
+        value.setTextColor(0xFFF0E1C7);
+        value.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        value.setGravity(Gravity.CENTER);
+        value.setPadding(dp(4), 0, 0, 0);
+        coin.addView(value, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.MATCH_PARENT
+        ));
+
+        parent.addView(coin, new LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                1f
+        ));
     }
 
     private View characterRow(DndCharacter character) {
