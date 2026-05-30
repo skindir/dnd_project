@@ -40,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int TAB_INVENTORY = 1;
     private static final int TAB_STATS = 2;
     private static final int TAB_SPELLBOOK = 3;
+    private static final float EQUIPMENT_IMAGE_ASPECT_RATIO = 1536f / 1024f;
     private static final String[] CHARACTER_CLASSES = {
             "Бард",
             "Варвар",
@@ -335,36 +336,37 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void addEquipmentLayout(LinearLayout parent) {
-        FrameLayout equipment = new FrameLayout(this);
+        FrameLayout equipment = new AspectRatioFrameLayout(this);
         equipment.setBackgroundResource(R.drawable.dnd_slot_bg);
 
         ImageView background = new ImageView(this);
         background.setImageResource(classImageResource(selectedCharacter.characterClass));
-        background.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        background.setAlpha(0.92f);
+        background.setScaleType(ImageView.ScaleType.FIT_XY);
         equipment.addView(background, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT
         ));
 
-        addEquipmentSlot(equipment, "Шлем", 144, 16, 64, 52);
-        addEquipmentSlot(equipment, "Наплечники", 104, 80, 144, 44);
-        addEquipmentSlot(equipment, "Нагрудник", 128, 132, 96, 82);
-        addEquipmentSlot(equipment, "Пояс", 128, 224, 96, 38);
-        addEquipmentSlot(equipment, "Штаны", 136, 270, 80, 62);
-        addEquipmentSlot(equipment, "Ботинки", 112, 340, 128, 48);
-        addEquipmentSlot(equipment, "Перчатки", 52, 174, 56, 62);
-        addEquipmentSlot(equipment, "Кольцо 1", 22, 48, 42, 42);
-        addEquipmentSlot(equipment, "Кольцо 2", 288, 48, 42, 42);
-        addEquipmentSlot(equipment, "Серьга 1", 72, 22, 36, 36);
-        addEquipmentSlot(equipment, "Серьга 2", 244, 22, 36, 36);
-        addEquipmentSlot(equipment, "Кулон", 154, 76, 44, 44);
-        addEquipmentSlot(equipment, "Первичное оружие", 18, 250, 74, 120);
-        addEquipmentSlot(equipment, "Вторичное оружие", 260, 250, 74, 120);
+        addEquipmentSlot(equipment, "Шлем", 419, 52, 160, 145);
+        addEquipmentSlot(equipment, "Наплечник левый", 102, 215, 162, 146);
+        addEquipmentSlot(equipment, "Наплечник правый", 760, 215, 162, 146);
+        addEquipmentSlot(equipment, "Серьга 1", 72, 407, 128, 126);
+        addEquipmentSlot(equipment, "Серьга 2", 784, 407, 128, 126);
+        addEquipmentSlot(equipment, "Кулон", 428, 384, 138, 120);
+        addEquipmentSlot(equipment, "Перчатка левая", 56, 620, 118, 126);
+        addEquipmentSlot(equipment, "Перчатка правая", 850, 620, 118, 126);
+        addEquipmentSlot(equipment, "Нагрудник", 407, 555, 174, 154);
+        addEquipmentSlot(equipment, "Пояс", 423, 790, 138, 112);
+        addEquipmentSlot(equipment, "Первичное оружие", 53, 860, 121, 470);
+        addEquipmentSlot(equipment, "Вторичное оружие", 852, 860, 120, 470);
+        addEquipmentSlot(equipment, "Кольцо 1", 210, 956, 86, 108);
+        addEquipmentSlot(equipment, "Кольцо 2", 753, 956, 88, 108);
+        addEquipmentSlot(equipment, "Штаны", 425, 1047, 142, 138);
+        addEquipmentSlot(equipment, "Ботинки", 429, 1296, 138, 114);
 
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                dp(420)
+                LinearLayout.LayoutParams.WRAP_CONTENT
         );
         params.setMargins(0, dp(8), 0, dp(12));
         parent.addView(equipment, params);
@@ -373,14 +375,22 @@ public class MainActivity extends AppCompatActivity {
     private void addEquipmentSlot(FrameLayout equipment, String slot, int left, int top, int width, int height) {
         View slotView = new View(this);
         slotView.setBackgroundResource(R.drawable.dnd_empty_slot_bg);
-        slotView.setAlpha(0.48f);
+        slotView.setAlpha(0.42f);
         slotView.setContentDescription(slot);
         slotView.setOnClickListener(view -> Toast.makeText(this, slot + ": пусто", Toast.LENGTH_SHORT).show());
 
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(dp(width), dp(height));
-        params.leftMargin = dp(left);
-        params.topMargin = dp(top);
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(1, 1);
         equipment.addView(slotView, params);
+        equipment.addOnLayoutChangeListener((view, leftEdge, topEdge, rightEdge, bottomEdge, oldLeft, oldTop, oldRight, oldBottom) -> {
+            int equipmentWidth = rightEdge - leftEdge;
+            int equipmentHeight = bottomEdge - topEdge;
+            FrameLayout.LayoutParams updatedParams = (FrameLayout.LayoutParams) slotView.getLayoutParams();
+            updatedParams.width = Math.round(equipmentWidth * (width / 1024f));
+            updatedParams.height = Math.round(equipmentHeight * (height / 1536f));
+            updatedParams.leftMargin = Math.round(equipmentWidth * (left / 1024f));
+            updatedParams.topMargin = Math.round(equipmentHeight * (top / 1536f));
+            slotView.setLayoutParams(updatedParams);
+        });
     }
 
     private int classImageResource(String characterClass) {
@@ -781,6 +791,20 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
             return spellbook;
+        }
+    }
+
+    private static class AspectRatioFrameLayout extends FrameLayout {
+        AspectRatioFrameLayout(@NonNull android.content.Context context) {
+            super(context);
+        }
+
+        @Override
+        protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+            int width = MeasureSpec.getSize(widthMeasureSpec);
+            int height = Math.round(width * EQUIPMENT_IMAGE_ASPECT_RATIO);
+            int exactHeight = MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY);
+            super.onMeasure(widthMeasureSpec, exactHeight);
         }
     }
 }
