@@ -435,7 +435,7 @@ public class MainActivity extends AppCompatActivity {
             addLanguagesTable(body, selectedCharacter.languages);
         } else if (selectedTab == TAB_INVENTORY) {
             addEquipmentLayout(body);
-            body.addView(sectionTitle("В рюкзаке"));
+            addBackpackHeader(body);
             addBackpackLayout(body, content);
         } else {
             body.addView(sectionTitle("Книга заклинаний"));
@@ -446,6 +446,142 @@ public class MainActivity extends AppCompatActivity {
         }
 
         content.addView(scrollView);
+    }
+
+    private void addBackpackHeader(LinearLayout parent) {
+        LinearLayout header = new LinearLayout(this);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+
+        TextView title = sectionTitle("В рюкзаке");
+        header.addView(title, new LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+        ));
+
+        LinearLayout moneyButton = new LinearLayout(this);
+        moneyButton.setOrientation(LinearLayout.HORIZONTAL);
+        moneyButton.setGravity(Gravity.CENTER);
+        moneyButton.setPadding(dp(8), 0, dp(8), 0);
+        moneyButton.setBackgroundColor(0xFFE4D7C7);
+        moneyButton.setOnClickListener(view -> showMoneyDialog());
+
+        TextView plus = bodyText("+");
+        plus.setTextSize(22);
+        plus.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        plus.setGravity(Gravity.CENTER);
+        moneyButton.addView(plus, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.MATCH_PARENT
+        ));
+
+        ImageView coinIcon = new ImageView(this);
+        coinIcon.setImageResource(R.drawable.coin_platinum);
+        coinIcon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        moneyButton.addView(coinIcon, new LinearLayout.LayoutParams(dp(24), dp(24)));
+
+        LinearLayout.LayoutParams moneyParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                dp(40)
+        );
+        moneyParams.setMargins(dp(8), 0, dp(6), 0);
+        header.addView(moneyButton, moneyParams);
+
+        Button addItemButton = secondaryButton("Add Item");
+        addItemButton.setOnClickListener(view ->
+                Toast.makeText(this, "Add Item", Toast.LENGTH_SHORT).show());
+        header.addView(addItemButton, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                dp(40)
+        ));
+
+        parent.addView(header, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+    }
+
+    private void showMoneyDialog() {
+        LinearLayout dialogBody = verticalLayout(10);
+        dialogBody.setPadding(dp(16), dp(8), dp(16), 0);
+
+        LinearLayout firstRow = new LinearLayout(this);
+        firstRow.setOrientation(LinearLayout.HORIZONTAL);
+        firstRow.setGravity(Gravity.CENTER_VERTICAL);
+        addMoneyInput(firstRow, R.drawable.coin_platinum);
+        addMoneyInput(firstRow, R.drawable.coin_gold);
+        dialogBody.addView(firstRow);
+
+        LinearLayout secondRow = new LinearLayout(this);
+        secondRow.setOrientation(LinearLayout.HORIZONTAL);
+        secondRow.setGravity(Gravity.CENTER_VERTICAL);
+        addMoneyInput(secondRow, R.drawable.coin_silver);
+        addMoneyInput(secondRow, R.drawable.coin_copper);
+        dialogBody.addView(secondRow);
+
+        LinearLayout actions = new LinearLayout(this);
+        actions.setOrientation(LinearLayout.HORIZONTAL);
+        actions.setGravity(Gravity.CENTER);
+
+        View subtract = moneyActionButton(R.drawable.coin_action_subtract, "Отнять");
+        View add = moneyActionButton(R.drawable.coin_action_add, "Добавить");
+        LinearLayout.LayoutParams subtractParams = new LinearLayout.LayoutParams(dp(66), dp(44));
+        subtractParams.setMargins(0, 0, dp(8), 0);
+        actions.addView(subtract, subtractParams);
+        LinearLayout.LayoutParams addParams = new LinearLayout.LayoutParams(dp(66), dp(44));
+        addParams.setMargins(dp(8), 0, 0, 0);
+        actions.addView(add, addParams);
+        dialogBody.addView(actions);
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("Деньги")
+                .setView(dialogBody)
+                .create();
+        subtract.setOnClickListener(view -> dialog.dismiss());
+        add.setOnClickListener(view -> dialog.dismiss());
+        dialog.show();
+    }
+
+    private View moneyActionButton(int iconResource, String description) {
+        FrameLayout button = new FrameLayout(this);
+        button.setBackgroundColor(0xFFE4D7C7);
+        button.setContentDescription(description);
+
+        ImageView icon = new ImageView(this);
+        icon.setImageResource(iconResource);
+        icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        button.addView(icon, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                Gravity.CENTER
+        ));
+        return button;
+    }
+
+    private void addMoneyInput(LinearLayout parent, int coinResource) {
+        LinearLayout cell = new LinearLayout(this);
+        cell.setOrientation(LinearLayout.HORIZONTAL);
+        cell.setGravity(Gravity.CENTER_VERTICAL);
+        cell.setPadding(dp(4), 0, dp(4), 0);
+
+        ImageView icon = new ImageView(this);
+        icon.setImageResource(coinResource);
+        icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        cell.addView(icon, new LinearLayout.LayoutParams(dp(34), dp(34)));
+
+        EditText amount = new EditText(this);
+        amount.setInputType(InputType.TYPE_CLASS_NUMBER);
+        amount.setSingleLine(true);
+        amount.setText("0");
+        amount.setSelectAllOnFocus(true);
+        cell.addView(amount, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        parent.addView(cell, new LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+        ));
     }
 
     private void addBackpackLayout(LinearLayout parent, FrameLayout content) {
