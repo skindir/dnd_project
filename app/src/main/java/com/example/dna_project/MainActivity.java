@@ -10,7 +10,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.GridLayout;
-import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -53,6 +52,15 @@ public class MainActivity extends AppCompatActivity {
             "Материалы",
             "Прочее",
             "Квестовые предметы"
+    };
+    private static final int[] INVENTORY_CATEGORY_ICONS = {
+            R.drawable.tab_weapon,
+            R.drawable.tab_armor,
+            R.drawable.tab_accessories,
+            R.drawable.tab_instruments,
+            R.drawable.tab_materials,
+            R.drawable.tab_other,
+            R.drawable.tab_key_items
     };
     private static final String[] CHARACTER_CLASSES = {
             "Бард",
@@ -426,8 +434,6 @@ public class MainActivity extends AppCompatActivity {
             addSavingThrowsTable(body, selectedCharacter.savingThrows);
             addLanguagesTable(body, selectedCharacter.languages);
         } else if (selectedTab == TAB_INVENTORY) {
-            body.addView(sectionTitle("Инвентарь"));
-            body.addView(sectionTitle("Надето на персонаже"));
             addEquipmentLayout(body);
             body.addView(sectionTitle("В рюкзаке"));
             addBackpackLayout(body, content);
@@ -460,19 +466,25 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void addInventoryCategoryTabs(LinearLayout parent, FrameLayout content) {
-        HorizontalScrollView scrollView = new HorizontalScrollView(this);
-        scrollView.setHorizontalScrollBarEnabled(false);
-        scrollView.setClipToPadding(false);
-
         LinearLayout tabs = new LinearLayout(this);
         tabs.setOrientation(LinearLayout.HORIZONTAL);
-        tabs.setPadding(0, 0, dp(4), 0);
+        tabs.setGravity(Gravity.CENTER);
 
         for (int index = 0; index < INVENTORY_CATEGORIES.length; index++) {
-            Button tab = secondaryButton(INVENTORY_CATEGORIES[index]);
-            tab.setTextSize(13);
-            tab.setPadding(dp(10), 0, dp(10), 0);
+            FrameLayout tab = new FrameLayout(this);
+            tab.setPadding(dp(2), dp(2), dp(2), dp(2));
             tab.setBackgroundColor(index == selectedInventoryCategory ? 0xFFC8A86A : 0xFFE4D7C7);
+            tab.setContentDescription(INVENTORY_CATEGORIES[index]);
+
+            ImageView icon = new ImageView(this);
+            icon.setImageResource(INVENTORY_CATEGORY_ICONS[index]);
+            icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            tab.addView(icon, new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    Gravity.CENTER
+            ));
+
             final int categoryIndex = index;
             tab.setOnClickListener(view -> {
                 selectedInventoryCategory = categoryIndex;
@@ -480,17 +492,17 @@ public class MainActivity extends AppCompatActivity {
             });
 
             LinearLayout.LayoutParams tabParams = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    dp(40)
+                    0,
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    1f
             );
-            tabParams.setMargins(0, 0, dp(6), 0);
+            tabParams.setMargins(dp(2), 0, dp(2), 0);
             tabs.addView(tab, tabParams);
         }
 
-        scrollView.addView(tabs);
-        parent.addView(scrollView, new LinearLayout.LayoutParams(
+        parent.addView(tabs, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                dp(44)
+                dp(50)
         ));
     }
 
