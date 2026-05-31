@@ -509,15 +509,15 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout firstRow = new LinearLayout(this);
         firstRow.setOrientation(LinearLayout.HORIZONTAL);
         firstRow.setGravity(Gravity.CENTER_VERTICAL);
-        addMoneyInput(firstRow, R.drawable.coin_platinum);
-        addMoneyInput(firstRow, R.drawable.coin_gold);
+        EditText platinumInput = addMoneyInput(firstRow, R.drawable.coin_platinum);
+        EditText goldInput = addMoneyInput(firstRow, R.drawable.coin_gold);
         dialogBody.addView(firstRow);
 
         LinearLayout secondRow = new LinearLayout(this);
         secondRow.setOrientation(LinearLayout.HORIZONTAL);
         secondRow.setGravity(Gravity.CENTER_VERTICAL);
-        addMoneyInput(secondRow, R.drawable.coin_silver);
-        addMoneyInput(secondRow, R.drawable.coin_copper);
+        EditText silverInput = addMoneyInput(secondRow, R.drawable.coin_silver);
+        EditText copperInput = addMoneyInput(secondRow, R.drawable.coin_copper);
         dialogBody.addView(secondRow);
 
         LinearLayout actions = new LinearLayout(this);
@@ -538,9 +538,30 @@ public class MainActivity extends AppCompatActivity {
                 .setTitle("Деньги")
                 .setView(dialogBody)
                 .create();
-        subtract.setOnClickListener(view -> dialog.dismiss());
-        add.setOnClickListener(view -> dialog.dismiss());
+        subtract.setOnClickListener(view -> applyMoneyChange(dialog, platinumInput, goldInput, silverInput, copperInput, -1));
+        add.setOnClickListener(view -> applyMoneyChange(dialog, platinumInput, goldInput, silverInput, copperInput, 1));
         dialog.show();
+    }
+
+    private void applyMoneyChange(
+            AlertDialog dialog,
+            EditText platinumInput,
+            EditText goldInput,
+            EditText silverInput,
+            EditText copperInput,
+            int direction
+    ) {
+        long delta = moneyAsCopper(
+                intValue(platinumInput, 0),
+                intValue(goldInput, 0),
+                intValue(silverInput, 0),
+                intValue(copperInput, 0)
+        ) * direction;
+        long updatedTotal = Math.max(0, selectedCharacter.moneyAsCopper() + delta);
+        selectedCharacter.setMoneyFromCopper(updatedTotal);
+        saveCharacters();
+        dialog.dismiss();
+        showCharacterSheet();
     }
 
     private View moneyActionButton(int iconResource, String description) {
@@ -559,7 +580,7 @@ public class MainActivity extends AppCompatActivity {
         return button;
     }
 
-    private void addMoneyInput(LinearLayout parent, int coinResource) {
+    private EditText addMoneyInput(LinearLayout parent, int coinResource) {
         LinearLayout cell = new LinearLayout(this);
         cell.setOrientation(LinearLayout.HORIZONTAL);
         cell.setGravity(Gravity.CENTER_VERTICAL);
@@ -582,6 +603,7 @@ public class MainActivity extends AppCompatActivity {
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 1f
         ));
+        return amount;
     }
 
     private void addBackpackLayout(LinearLayout parent, FrameLayout content) {
@@ -693,10 +715,10 @@ public class MainActivity extends AppCompatActivity {
         belt.setPadding(dp(6), dp(4), dp(6), dp(4));
         belt.setBackgroundResource(R.drawable.dnd_slot_bg);
 
-        addCoinCell(belt, R.drawable.coin_platinum, "0");
-        addCoinCell(belt, R.drawable.coin_gold, "0");
-        addCoinCell(belt, R.drawable.coin_silver, "0");
-        addCoinCell(belt, R.drawable.coin_copper, "0");
+        addCoinCell(belt, R.drawable.coin_platinum, String.valueOf(selectedCharacter.platinumCoins));
+        addCoinCell(belt, R.drawable.coin_gold, String.valueOf(selectedCharacter.goldCoins));
+        addCoinCell(belt, R.drawable.coin_silver, String.valueOf(selectedCharacter.silverCoins));
+        addCoinCell(belt, R.drawable.coin_copper, String.valueOf(selectedCharacter.copperCoins));
 
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -1259,6 +1281,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private static long moneyAsCopper(int platinum, int gold, int silver, int copper) {
+        return (((long) platinum * 100 + gold) * 100 + silver) * 100 + copper;
+    }
+
     private int dp(int value) {
         return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
     }
@@ -1323,6 +1349,10 @@ public class MainActivity extends AppCompatActivity {
         final List<String> languages;
         final List<String> savingThrows;
         final List<List<String>> spellbook;
+        int platinumCoins;
+        int goldCoins;
+        int silverCoins;
+        int copperCoins;
 
         DndCharacter(
                 String name,
@@ -1366,7 +1396,11 @@ public class MainActivity extends AppCompatActivity {
                     0,
                     new ArrayList<>(),
                     new ArrayList<>(),
-                    createEmptySpellbook()
+                    createEmptySpellbook(),
+                    0,
+                    0,
+                    0,
+                    0
             );
         }
 
@@ -1429,7 +1463,11 @@ public class MainActivity extends AppCompatActivity {
                     initiative,
                     languages,
                     savingThrows,
-                    createEmptySpellbook()
+                    createEmptySpellbook(),
+                    0,
+                    0,
+                    0,
+                    0
             );
         }
 
@@ -1464,6 +1502,78 @@ public class MainActivity extends AppCompatActivity {
                 List<String> savingThrows,
                 List<List<String>> spellbook
         ) {
+            this(
+                    name,
+                    characterClass,
+                    level,
+                    strength,
+                    dexterity,
+                    constitution,
+                    intelligence,
+                    charisma,
+                    wisdom,
+                    speed,
+                    armorClass,
+                    race,
+                    background,
+                    alignment,
+                    currentHp,
+                    maxHp,
+                    temporaryHp,
+                    hitDice,
+                    proficiencyBonus,
+                    perception,
+                    featuresAndTraits,
+                    personalityTraits,
+                    ideals,
+                    bonds,
+                    flaws,
+                    initiative,
+                    languages,
+                    savingThrows,
+                    spellbook,
+                    0,
+                    0,
+                    0,
+                    0
+            );
+        }
+
+        DndCharacter(
+                String name,
+                String characterClass,
+                int level,
+                int strength,
+                int dexterity,
+                int constitution,
+                int intelligence,
+                int charisma,
+                int wisdom,
+                int speed,
+                int armorClass,
+                String race,
+                String background,
+                String alignment,
+                int currentHp,
+                int maxHp,
+                int temporaryHp,
+                String hitDice,
+                int proficiencyBonus,
+                int perception,
+                String featuresAndTraits,
+                String personalityTraits,
+                String ideals,
+                String bonds,
+                String flaws,
+                int initiative,
+                List<String> languages,
+                List<String> savingThrows,
+                List<List<String>> spellbook,
+                int platinumCoins,
+                int goldCoins,
+                int silverCoins,
+                int copperCoins
+        ) {
             this.name = name;
             this.characterClass = characterClass;
             this.level = level;
@@ -1493,6 +1603,7 @@ public class MainActivity extends AppCompatActivity {
             this.languages = languages;
             this.savingThrows = savingThrows;
             this.spellbook = spellbook;
+            setMoneyFromCopper(MainActivity.moneyAsCopper(platinumCoins, goldCoins, silverCoins, copperCoins));
         }
 
         JSONObject toJson() {
@@ -1524,6 +1635,10 @@ public class MainActivity extends AppCompatActivity {
                 object.put("bonds", bonds);
                 object.put("flaws", flaws);
                 object.put("initiative", initiative);
+                object.put("platinumCoins", platinumCoins);
+                object.put("goldCoins", goldCoins);
+                object.put("silverCoins", silverCoins);
+                object.put("copperCoins", copperCoins);
                 JSONArray languagesArray = new JSONArray();
                 for (String language : languages) {
                     languagesArray.put(language);
@@ -1580,8 +1695,26 @@ public class MainActivity extends AppCompatActivity {
                     object.optInt("initiative", 0),
                     readLanguages(object.optJSONArray("languages")),
                     readSavingThrows(object.optJSONArray("savingThrows")),
-                    readSpellbook(object.optJSONArray("spellbook"))
+                    readSpellbook(object.optJSONArray("spellbook")),
+                    object.optInt("platinumCoins", 0),
+                    object.optInt("goldCoins", 0),
+                    object.optInt("silverCoins", 0),
+                    object.optInt("copperCoins", 0)
             );
+        }
+
+        long moneyAsCopper() {
+            return MainActivity.moneyAsCopper(platinumCoins, goldCoins, silverCoins, copperCoins);
+        }
+
+        void setMoneyFromCopper(long totalCopper) {
+            long normalizedTotal = Math.max(0, totalCopper);
+            platinumCoins = (int) (normalizedTotal / 1_000_000L);
+            normalizedTotal %= 1_000_000L;
+            goldCoins = (int) (normalizedTotal / 10_000L);
+            normalizedTotal %= 10_000L;
+            silverCoins = (int) (normalizedTotal / 100L);
+            copperCoins = (int) (normalizedTotal % 100L);
         }
 
         private static List<String> readSavingThrows(JSONArray savedSavingThrows) {
