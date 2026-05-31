@@ -560,7 +560,9 @@ public class MainActivity extends AppCompatActivity {
         long currentTotal = selectedCharacter.moneyAsCopper();
         long updatedTotal = currentTotal + delta;
         if (updatedTotal < 0) {
-            Toast.makeText(this, "Не хватает денег", Toast.LENGTH_SHORT).show();
+            Toast toast = Toast.makeText(this, "Не хватает денег", Toast.LENGTH_SHORT);
+            toast.setGravity(Gravity.CENTER, 0, 0);
+            toast.show();
             return;
         }
         selectedCharacter.setMoneyFromCopper(updatedTotal);
