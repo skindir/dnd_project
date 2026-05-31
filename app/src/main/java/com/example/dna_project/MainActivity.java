@@ -557,7 +557,12 @@ public class MainActivity extends AppCompatActivity {
                 intValue(silverInput, 0),
                 intValue(copperInput, 0)
         ) * direction;
-        long updatedTotal = Math.max(0, selectedCharacter.moneyAsCopper() + delta);
+        long currentTotal = selectedCharacter.moneyAsCopper();
+        long updatedTotal = currentTotal + delta;
+        if (updatedTotal < 0) {
+            Toast.makeText(this, "Не хватает денег", Toast.LENGTH_SHORT).show();
+            return;
+        }
         selectedCharacter.setMoneyFromCopper(updatedTotal);
         saveCharacters();
         dialog.dismiss();
