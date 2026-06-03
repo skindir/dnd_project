@@ -404,34 +404,12 @@ public class MainActivity extends AppCompatActivity {
         scrollView.addView(body);
 
         if (selectedTab == TAB_STATS) {
-            body.addView(sectionTitle("Характеристики"));
-            addStat(body, "Имя", selectedCharacter.name);
-            addStat(body, "Класс", selectedCharacter.characterClass);
-            addStat(body, "Уровень", selectedCharacter.level);
-            addStat(body, "Раса", selectedCharacter.race);
-            addStat(body, "Предыстория", selectedCharacter.background);
-            addStat(body, "Мировоззрение", selectedCharacter.alignment);
-            addStat(body, "Текущие ХП", selectedCharacter.currentHp);
-            addStat(body, "Максимум ХП", selectedCharacter.maxHp);
-            addStat(body, "Временные ХП", selectedCharacter.temporaryHp);
-            addStat(body, "Кубик хитов", selectedCharacter.hitDice);
-            addStat(body, "Бонус мастерства", selectedCharacter.proficiencyBonus);
-            addStat(body, "Восприятие", selectedCharacter.perception);
-            addStat(body, "Инициатива", selectedCharacter.initiative);
-            addStat(body, "Ловкость", selectedCharacter.dexterity);
-            addStat(body, "Сила", selectedCharacter.strength);
-            addStat(body, "Телосложение", selectedCharacter.constitution);
-            addStat(body, "Интеллект", selectedCharacter.intelligence);
-            addStat(body, "Харизма", selectedCharacter.charisma);
-            addStat(body, "Мудрость", selectedCharacter.wisdom);
-            addStat(body, "Скорость", selectedCharacter.speed);
-            addStat(body, "Класс брони", selectedCharacter.armorClass);
-            addStat(body, "Особенности и черты", selectedCharacter.featuresAndTraits);
-            addStat(body, "Черты характера", selectedCharacter.personalityTraits);
-            addStat(body, "Идеалы", selectedCharacter.ideals);
-            addStat(body, "Узы", selectedCharacter.bonds);
-            addStat(body, "Недостатки", selectedCharacter.flaws);
-            addSavingThrowsTable(body, selectedCharacter.savingThrows);
+            body.setBackgroundResource(R.drawable.dnd_character_sheet_bg);
+            addSheetHeader(body);
+            addIdentitySection(body);
+            addCombatSection(body);
+            addAbilitySection(body, selectedCharacter.savingThrows);
+            addCharacterNotesSection(body);
             addLanguagesTable(body, selectedCharacter.languages);
         } else if (selectedTab == TAB_INVENTORY) {
             addEquipmentLayout(body);
@@ -819,6 +797,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void addEquipmentLayout(LinearLayout parent) {
         FrameLayout equipment = new AspectRatioFrameLayout(this);
+        equipment.setBackgroundResource(R.drawable.dnd_slot_bg);
 
         ImageView background = new ImageView(this);
         background.setImageResource(classImageResource(selectedCharacter.characterClass));
@@ -1017,6 +996,398 @@ public class MainActivity extends AppCompatActivity {
         row.addView(number);
 
         parent.addView(row);
+    }
+
+    private void addSheetHeader(LinearLayout parent) {
+        LinearLayout header = verticalLayout(0);
+        header.setGravity(Gravity.CENTER);
+        header.setPadding(0, dp(2), 0, dp(8));
+
+        TextView brand = title("DUNGEONS & DRAGONS");
+        brand.setTextSize(24);
+        brand.setGravity(Gravity.CENTER);
+        header.addView(brand);
+
+        LinearLayout flourish = new LinearLayout(this);
+        flourish.setOrientation(LinearLayout.HORIZONTAL);
+        flourish.setGravity(Gravity.CENTER_VERTICAL);
+        flourish.setPadding(0, dp(4), 0, 0);
+
+        View left = new View(this);
+        left.setBackgroundColor(0xFF8A633A);
+        flourish.addView(left, new LinearLayout.LayoutParams(0, dp(1), 1f));
+
+        TextView mark = bodyText("◆");
+        mark.setTextSize(12);
+        mark.setTextColor(0xFF8A633A);
+        mark.setGravity(Gravity.CENTER);
+        mark.setPadding(dp(10), 0, dp(10), 0);
+        flourish.addView(mark);
+
+        View right = new View(this);
+        right.setBackgroundColor(0xFF8A633A);
+        flourish.addView(right, new LinearLayout.LayoutParams(0, dp(1), 1f));
+        header.addView(flourish);
+
+        parent.addView(header);
+    }
+
+    private void addIdentitySection(LinearLayout parent) {
+        LinearLayout section = sheetSection("Анкета персонажа");
+        section.setPadding(dp(12), dp(9), dp(12), dp(10));
+        String[][] fields = {
+                {"Имя персонажа", selectedCharacter.name},
+                {"Класс", selectedCharacter.characterClass},
+                {"Уровень", String.valueOf(selectedCharacter.level)},
+                {"Раса", selectedCharacter.race},
+                {"Предыстория", selectedCharacter.background},
+                {"Мировоззрение", selectedCharacter.alignment}
+        };
+        addCompactIdentityGrid(section, fields, wideLayout() ? 3 : 2);
+        parent.addView(section);
+    }
+
+    private void addCombatSection(LinearLayout parent) {
+        LinearLayout section = sheetSection("Боевые показатели");
+        GridLayout combatGrid = new GridLayout(this);
+        combatGrid.setColumnCount(wideLayout() ? 5 : 2);
+        combatGrid.setUseDefaultMargins(false);
+        addCombatCell(combatGrid, "Класс брони", String.valueOf(selectedCharacter.armorClass), true);
+        addCombatCell(combatGrid, "Инициатива", String.valueOf(selectedCharacter.initiative), false);
+        addCombatCell(combatGrid, "Скорость", String.valueOf(selectedCharacter.speed), false);
+        addCombatCell(combatGrid, "Бонус мастерства", String.valueOf(selectedCharacter.proficiencyBonus), false);
+        addCombatCell(combatGrid, "Пассивная мудрость", String.valueOf(selectedCharacter.perception), false);
+        section.addView(combatGrid);
+
+        LinearLayout hp = new LinearLayout(this);
+        hp.setOrientation(wideLayout() ? LinearLayout.HORIZONTAL : LinearLayout.VERTICAL);
+        hp.setPadding(0, dp(8), 0, 0);
+        addHpPanel(hp, "Текущие хиты", String.valueOf(selectedCharacter.currentHp), "Максимум: " + selectedCharacter.maxHp);
+        addHpPanel(hp, "Временные хиты", String.valueOf(selectedCharacter.temporaryHp), "Защита сверх максимума");
+        addHpPanel(hp, "Кубики хитов", selectedCharacter.hitDice, "Всего: " + selectedCharacter.level);
+        section.addView(hp);
+        parent.addView(section);
+    }
+
+    private void addCharacterNotesSection(LinearLayout parent) {
+        LinearLayout section = sheetSection("Описание");
+        String[][] notes = {
+                {"Особенности и черты", selectedCharacter.featuresAndTraits},
+                {"Черты характера", selectedCharacter.personalityTraits},
+                {"Идеалы", selectedCharacter.ideals},
+                {"Узы", selectedCharacter.bonds},
+                {"Недостатки", selectedCharacter.flaws}
+        };
+        addFieldGrid(section, notes, wideLayout() ? 2 : 1);
+        parent.addView(section);
+    }
+
+    private LinearLayout sheetSection(String titleText) {
+        LinearLayout section = verticalLayout(0);
+        section.setPadding(dp(14), dp(12), dp(14), dp(14));
+        section.setBackgroundResource(R.drawable.dnd_sheet_section_bg);
+        LinearLayout.LayoutParams sectionParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        sectionParams.setMargins(0, 0, 0, dp(12));
+        section.setLayoutParams(sectionParams);
+
+        LinearLayout header = new LinearLayout(this);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+        header.setPadding(0, 0, 0, dp(10));
+
+        View leftLine = new View(this);
+        leftLine.setBackgroundColor(0xFFD7BFA6);
+        header.addView(leftLine, new LinearLayout.LayoutParams(0, dp(1), 1f));
+
+        TextView title = sectionTitle(titleText.toUpperCase());
+        title.setTextSize(15);
+        title.setGravity(Gravity.CENTER);
+        title.setPadding(dp(12), 0, dp(12), 0);
+        header.addView(title);
+
+        View rightLine = new View(this);
+        rightLine.setBackgroundColor(0xFFD7BFA6);
+        header.addView(rightLine, new LinearLayout.LayoutParams(0, dp(1), 1f));
+        section.addView(header);
+
+        return section;
+    }
+
+    private void addFieldGrid(LinearLayout parent, String[][] fields, int columns) {
+        GridLayout grid = new GridLayout(this);
+        grid.setColumnCount(columns);
+        grid.setUseDefaultMargins(false);
+
+        for (String[] field : fields) {
+            addFieldCell(grid, field[0], field[1], columns);
+        }
+
+        parent.addView(grid);
+    }
+
+    private void addCompactIdentityGrid(LinearLayout parent, String[][] fields, int columns) {
+        GridLayout grid = new GridLayout(this);
+        grid.setColumnCount(columns);
+        grid.setUseDefaultMargins(false);
+
+        for (String[] field : fields) {
+            LinearLayout cell = verticalLayout(0);
+            cell.setPadding(dp(10), dp(6), dp(10), dp(7));
+            cell.setMinimumHeight(dp(46));
+            cell.setBackgroundResource(R.drawable.dnd_field_bg);
+
+            TextView label = bodyText(field[0].toUpperCase());
+            label.setTextSize(10);
+            label.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+            label.setTextColor(0xFF80664F);
+            cell.addView(label);
+
+            TextView value = sectionTitle(field[1] == null || field[1].trim().isEmpty() ? "—" : field[1]);
+            value.setTextSize(14);
+            value.setSingleLine(false);
+            value.setPadding(0, dp(1), 0, 0);
+            cell.addView(value);
+
+            GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+            params.width = 0;
+            params.height = GridLayout.LayoutParams.WRAP_CONTENT;
+            params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+            params.setMargins(dp(2), dp(2), dp(2), dp(2));
+            cell.setLayoutParams(params);
+            grid.addView(cell);
+        }
+
+        parent.addView(grid);
+    }
+
+    private void addCombatCell(GridLayout grid, String labelText, String valueText, boolean shield) {
+        LinearLayout cell = verticalLayout(0);
+        cell.setGravity(Gravity.CENTER);
+        cell.setPadding(dp(8), dp(9), dp(8), dp(10));
+        cell.setMinimumHeight(dp(92));
+        cell.setBackgroundResource(R.drawable.dnd_combat_cell_bg);
+
+        TextView value = sectionTitle(valueText);
+        value.setTextSize(shield ? 22 : 24);
+        value.setGravity(Gravity.CENTER);
+        if (shield) {
+            value.setBackgroundResource(R.drawable.dnd_armor_shield_bg);
+            cell.addView(value, new LinearLayout.LayoutParams(dp(52), dp(56)));
+        } else {
+            value.setBackgroundResource(R.drawable.dnd_combat_value_bg);
+            cell.addView(value, new LinearLayout.LayoutParams(dp(56), dp(46)));
+        }
+
+        TextView label = bodyText(labelText.toUpperCase());
+        label.setTextSize(11);
+        label.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        label.setTextColor(0xFF6E5743);
+        label.setGravity(Gravity.CENTER);
+        label.setPadding(0, dp(6), 0, 0);
+        cell.addView(label);
+
+        GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+        params.width = 0;
+        params.height = GridLayout.LayoutParams.WRAP_CONTENT;
+        params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+        params.setMargins(dp(3), dp(3), dp(3), dp(3));
+        cell.setLayoutParams(params);
+        grid.addView(cell);
+    }
+
+    private void addFieldCell(GridLayout grid, String labelText, String valueText, int columns) {
+        LinearLayout cell = verticalLayout(0);
+        cell.setPadding(dp(12), dp(8), dp(12), dp(9));
+        cell.setMinimumHeight(dp(58));
+        cell.setBackgroundResource(R.drawable.dnd_field_bg);
+
+        TextView label = bodyText(labelText.toUpperCase());
+        label.setTextSize(12);
+        label.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        label.setTextColor(0xFF7B624D);
+        cell.addView(label);
+
+        TextView value = sectionTitle(valueText == null || valueText.trim().isEmpty() ? "—" : valueText);
+        value.setTextSize(16);
+        value.setPadding(0, dp(3), 0, 0);
+        cell.addView(value);
+
+        GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+        params.width = 0;
+        params.height = GridLayout.LayoutParams.WRAP_CONTENT;
+        params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+        params.setMargins(dp(3), dp(3), dp(3), dp(3));
+        cell.setLayoutParams(params);
+        grid.addView(cell);
+    }
+
+    private void addHpPanel(LinearLayout parent, String labelText, String valueText, String hintText) {
+        LinearLayout panel = verticalLayout(0);
+        panel.setPadding(dp(12), dp(10), dp(12), dp(12));
+        panel.setMinimumHeight(dp(96));
+        panel.setBackgroundResource(R.drawable.dnd_field_bg);
+
+        TextView label = bodyText(labelText.toUpperCase());
+        label.setTextSize(12);
+        label.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        label.setTextColor(0xFF7B624D);
+        label.setGravity(Gravity.CENTER);
+        panel.addView(label);
+
+        TextView value = sectionTitle(valueText);
+        value.setTextSize(25);
+        value.setGravity(Gravity.CENTER);
+        value.setPadding(0, dp(4), 0, dp(3));
+        panel.addView(value);
+
+        TextView hint = bodyText(hintText);
+        hint.setTextSize(13);
+        hint.setGravity(Gravity.CENTER);
+        panel.addView(hint);
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                wideLayout() ? 0 : LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                wideLayout() ? 1f : 0f
+        );
+        params.setMargins(dp(3), dp(3), dp(3), dp(3));
+        parent.addView(panel, params);
+    }
+
+    private void addAbilitySection(LinearLayout parent, List<String> selectedSavingThrows) {
+        LinearLayout section = sheetSection("Характеристики");
+
+        addAbilityRow(section, "Сила", "STR", selectedCharacter.strength,
+                new String[]{"Спасбросок (Сила)"}, new String[]{"Атлетика"}, selectedSavingThrows);
+        addAbilityRow(section, "Ловкость", "DEX", selectedCharacter.dexterity,
+                new String[]{"Спасбросок (Ловкость)"}, new String[]{"Акробатика", "Ловкость рук", "Скрытность"}, selectedSavingThrows);
+        addAbilityRow(section, "Телосложение", "CON", selectedCharacter.constitution,
+                new String[]{"Спасбросок (Телосложение)"}, new String[]{}, selectedSavingThrows);
+        addAbilityRow(section, "Интеллект", "INT", selectedCharacter.intelligence,
+                new String[]{"Спасбросок (Интеллект)"}, new String[]{"Магия", "История", "Расследование", "Природа", "Религия"}, selectedSavingThrows);
+        addAbilityRow(section, "Мудрость", "WIS", selectedCharacter.wisdom,
+                new String[]{"Спасбросок (Мудрость)"}, new String[]{"Дрессировка Животных", "Проницательность", "Медицина", "Внимательность", "Выживание"}, selectedSavingThrows);
+        addAbilityRow(section, "Харизма", "CHA", selectedCharacter.charisma,
+                new String[]{"Спасбросок (Харизма)"}, new String[]{"Обман", "Запугивание", "Выступление", "Убеждение"}, selectedSavingThrows);
+
+        parent.addView(section);
+    }
+
+    private void addAbilityRow(
+            LinearLayout parent,
+            String name,
+            String shortName,
+            int value,
+            String[] savingThrows,
+            String[] skills,
+            List<String> selectedSavingThrows
+    ) {
+        LinearLayout row = new LinearLayout(this);
+        boolean compact = !wideLayout();
+        row.setOrientation(compact ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL);
+        row.setGravity(compact ? Gravity.START : Gravity.CENTER_VERTICAL);
+        row.setPadding(dp(12), dp(10), dp(12), dp(10));
+        row.setBackgroundResource(R.drawable.dnd_ability_row_bg);
+
+        LinearLayout heading = new LinearLayout(this);
+        heading.setOrientation(LinearLayout.HORIZONTAL);
+        heading.setGravity(Gravity.CENTER_VERTICAL);
+
+        TextView score = sectionTitle(String.valueOf(value));
+        score.setTextSize(22);
+        score.setGravity(Gravity.CENTER);
+        score.setBackgroundResource(R.drawable.dnd_ability_score_bg);
+        heading.addView(score, new LinearLayout.LayoutParams(dp(52), dp(52)));
+
+        LinearLayout labelBox = verticalLayout(0);
+        labelBox.setPadding(dp(10), 0, dp(8), 0);
+        TextView label = sectionTitle(name.toUpperCase());
+        label.setTextSize(16);
+        TextView abbreviation = bodyText(shortName);
+        abbreviation.setTextSize(14);
+        abbreviation.setTextColor(0xFF2B2118);
+        labelBox.addView(label);
+        labelBox.addView(abbreviation);
+        heading.addView(labelBox, new LinearLayout.LayoutParams(
+                compact ? 0 : dp(108),
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                compact ? 1f : 0f
+        ));
+
+        if (compact) {
+            row.addView(heading, new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            ));
+        } else {
+            row.addView(heading, new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            ));
+        }
+
+        LinearLayout savingBox = verticalLayout(0);
+        savingBox.setPadding(dp(10), 0, dp(10), 0);
+        for (String savingThrow : savingThrows) {
+            savingBox.addView(proficiencyLine("Спасбросок", selectedSavingThrows.contains(savingThrow)));
+        }
+        if (compact) {
+            savingBox.setPadding(0, dp(10), 0, 0);
+            row.addView(savingBox, new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            ));
+        } else {
+            row.addView(savingBox, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.9f));
+        }
+
+        View divider = new View(this);
+        divider.setBackgroundColor(0xFFD9C5AF);
+        row.addView(divider, new LinearLayout.LayoutParams(
+                compact ? LinearLayout.LayoutParams.MATCH_PARENT : dp(1),
+                compact ? dp(1) : LinearLayout.LayoutParams.MATCH_PARENT
+        ));
+
+        LinearLayout skillsBox = verticalLayout(0);
+        skillsBox.setPadding(compact ? 0 : dp(14), compact ? dp(8) : 0, 0, 0);
+        if (skills.length == 0) {
+            TextView empty = bodyText("");
+            skillsBox.addView(empty, new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    dp(20)
+            ));
+        } else {
+            for (String skill : skills) {
+                skillsBox.addView(proficiencyLine(skill, selectedSavingThrows.contains(skill)));
+            }
+        }
+        row.addView(skillsBox, new LinearLayout.LayoutParams(
+                compact ? LinearLayout.LayoutParams.MATCH_PARENT : 0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                compact ? 0f : 1.05f
+        ));
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        params.setMargins(0, 0, 0, dp(8));
+        parent.addView(row, params);
+    }
+
+    private TextView proficiencyLine(String text, boolean selected) {
+        TextView line = bodyText((selected ? "●  " : "○  ") + text);
+        line.setTextSize(14);
+        line.setTextColor(0xFF2F261D);
+        line.setPadding(0, dp(2), 0, dp(2));
+        return line;
+    }
+
+    private boolean wideLayout() {
+        return getResources().getConfiguration().screenWidthDp >= 600;
     }
 
     private void addLanguagesTable(LinearLayout parent, List<String> languages) {
