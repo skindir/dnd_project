@@ -40,7 +40,28 @@ public class MainActivity extends AppCompatActivity {
     private static final int TAB_INVENTORY = 1;
     private static final int TAB_STATS = 2;
     private static final int TAB_SPELLBOOK = 3;
-    private static final float EQUIPMENT_IMAGE_ASPECT_RATIO = 1536f / 1024f;
+    private static final float EQUIPMENT_IMAGE_ASPECT_RATIO = 1754f / 1284f;
+    private static final float EQUIPMENT_DESIGN_WIDTH = 1284f;
+    private static final float EQUIPMENT_DESIGN_HEIGHT = 1754f;
+    private static final int INVENTORY_COLUMNS = 7;
+    private static final String[] INVENTORY_CATEGORIES = {
+            "Оружие",
+            "Броня",
+            "Аксесуары",
+            "Инструменты",
+            "Материалы",
+            "Прочее",
+            "Квестовые предметы"
+    };
+    private static final int[] INVENTORY_CATEGORY_ICONS = {
+            R.drawable.tab_weapon,
+            R.drawable.tab_armor,
+            R.drawable.tab_accessories,
+            R.drawable.tab_instruments,
+            R.drawable.tab_materials,
+            R.drawable.tab_other,
+            R.drawable.tab_key_items
+    };
     private static final String[] CHARACTER_CLASSES = {
             "Бард",
             "Варвар",
@@ -116,6 +137,7 @@ public class MainActivity extends AppCompatActivity {
     private FrameLayout root;
     private DndCharacter selectedCharacter;
     private int selectedTab = TAB_STATS;
+    private int selectedInventoryCategory = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -333,6 +355,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         root.removeAllViews();
+        selectedInventoryCategory = 0;
         LinearLayout screen = verticalLayout(0);
 
         FrameLayout content = new FrameLayout(this);
@@ -411,11 +434,9 @@ public class MainActivity extends AppCompatActivity {
             addSavingThrowsTable(body, selectedCharacter.savingThrows);
             addLanguagesTable(body, selectedCharacter.languages);
         } else if (selectedTab == TAB_INVENTORY) {
-            body.addView(sectionTitle("Инвентарь"));
-            body.addView(sectionTitle("Надето на персонаже"));
             addEquipmentLayout(body);
-            body.addView(sectionTitle("В рюкзаке"));
-            body.addView(bodyText("Сейчас инвентарь пуст."));
+            addBackpackHeader(body);
+            addBackpackLayout(body, content);
         } else {
             body.addView(sectionTitle("Книга заклинаний"));
             Button addSpell = primaryButton("Добавить заклинание");
@@ -425,6 +446,320 @@ public class MainActivity extends AppCompatActivity {
         }
 
         content.addView(scrollView);
+    }
+
+    private void addBackpackHeader(LinearLayout parent) {
+        LinearLayout header = new LinearLayout(this);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+
+        TextView title = sectionTitle("В рюкзаке");
+        header.addView(title, new LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+        ));
+
+        LinearLayout moneyButton = new LinearLayout(this);
+        moneyButton.setOrientation(LinearLayout.HORIZONTAL);
+        moneyButton.setGravity(Gravity.CENTER);
+        moneyButton.setPadding(dp(8), 0, dp(8), 0);
+        moneyButton.setBackgroundColor(0xFFE4D7C7);
+        moneyButton.setOnClickListener(view -> showMoneyDialog());
+
+        TextView plus = bodyText("+");
+        plus.setTextSize(22);
+        plus.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        plus.setGravity(Gravity.CENTER);
+        moneyButton.addView(plus, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.MATCH_PARENT
+        ));
+
+        ImageView coinIcon = new ImageView(this);
+        coinIcon.setImageResource(R.drawable.coin_platinum);
+        coinIcon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        moneyButton.addView(coinIcon, new LinearLayout.LayoutParams(dp(24), dp(24)));
+
+        LinearLayout.LayoutParams moneyParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                dp(40)
+        );
+        moneyParams.setMargins(dp(8), 0, dp(6), 0);
+        header.addView(moneyButton, moneyParams);
+
+        Button addItemButton = secondaryButton("Add Item");
+        addItemButton.setOnClickListener(view ->
+                Toast.makeText(this, "Add Item", Toast.LENGTH_SHORT).show());
+        header.addView(addItemButton, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                dp(40)
+        ));
+
+        parent.addView(header, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+    }
+
+    private void showMoneyDialog() {
+        LinearLayout dialogBody = verticalLayout(10);
+        dialogBody.setPadding(dp(16), dp(8), dp(16), 0);
+
+        LinearLayout firstRow = new LinearLayout(this);
+        firstRow.setOrientation(LinearLayout.HORIZONTAL);
+        firstRow.setGravity(Gravity.CENTER_VERTICAL);
+        EditText platinumInput = addMoneyInput(firstRow, R.drawable.coin_platinum);
+        EditText goldInput = addMoneyInput(firstRow, R.drawable.coin_gold);
+        dialogBody.addView(firstRow);
+
+        LinearLayout secondRow = new LinearLayout(this);
+        secondRow.setOrientation(LinearLayout.HORIZONTAL);
+        secondRow.setGravity(Gravity.CENTER_VERTICAL);
+        EditText silverInput = addMoneyInput(secondRow, R.drawable.coin_silver);
+        EditText copperInput = addMoneyInput(secondRow, R.drawable.coin_copper);
+        dialogBody.addView(secondRow);
+
+        LinearLayout actions = new LinearLayout(this);
+        actions.setOrientation(LinearLayout.HORIZONTAL);
+        actions.setGravity(Gravity.CENTER);
+
+        View subtract = moneyActionButton(R.drawable.coin_action_subtract, "Отнять");
+        View add = moneyActionButton(R.drawable.coin_action_add, "Добавить");
+        LinearLayout.LayoutParams subtractParams = new LinearLayout.LayoutParams(dp(66), dp(44));
+        subtractParams.setMargins(0, 0, dp(8), 0);
+        actions.addView(subtract, subtractParams);
+        LinearLayout.LayoutParams addParams = new LinearLayout.LayoutParams(dp(66), dp(44));
+        addParams.setMargins(dp(8), 0, 0, 0);
+        actions.addView(add, addParams);
+        dialogBody.addView(actions);
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("Деньги")
+                .setView(dialogBody)
+                .create();
+        subtract.setOnClickListener(view -> applyMoneyChange(dialog, platinumInput, goldInput, silverInput, copperInput, -1));
+        add.setOnClickListener(view -> applyMoneyChange(dialog, platinumInput, goldInput, silverInput, copperInput, 1));
+        dialog.show();
+    }
+
+    private void applyMoneyChange(
+            AlertDialog dialog,
+            EditText platinumInput,
+            EditText goldInput,
+            EditText silverInput,
+            EditText copperInput,
+            int direction
+    ) {
+        long delta = moneyAsCopper(
+                intValue(platinumInput, 0),
+                intValue(goldInput, 0),
+                intValue(silverInput, 0),
+                intValue(copperInput, 0)
+        ) * direction;
+        long currentTotal = selectedCharacter.moneyAsCopper();
+        long updatedTotal = currentTotal + delta;
+        if (updatedTotal < 0) {
+            Toast toast = Toast.makeText(this, "Не хватает денег", Toast.LENGTH_SHORT);
+            toast.setGravity(Gravity.CENTER, 0, 0);
+            toast.show();
+            return;
+        }
+        selectedCharacter.setMoneyFromCopper(updatedTotal);
+        saveCharacters();
+        dialog.dismiss();
+        showCharacterSheet();
+    }
+
+    private View moneyActionButton(int iconResource, String description) {
+        FrameLayout button = new FrameLayout(this);
+        button.setBackgroundColor(0xFFE4D7C7);
+        button.setContentDescription(description);
+
+        ImageView icon = new ImageView(this);
+        icon.setImageResource(iconResource);
+        icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        button.addView(icon, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                Gravity.CENTER
+        ));
+        return button;
+    }
+
+    private EditText addMoneyInput(LinearLayout parent, int coinResource) {
+        LinearLayout cell = new LinearLayout(this);
+        cell.setOrientation(LinearLayout.HORIZONTAL);
+        cell.setGravity(Gravity.CENTER_VERTICAL);
+        cell.setPadding(dp(4), 0, dp(4), 0);
+
+        ImageView icon = new ImageView(this);
+        icon.setImageResource(coinResource);
+        icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        cell.addView(icon, new LinearLayout.LayoutParams(dp(34), dp(34)));
+
+        EditText amount = new EditText(this);
+        amount.setInputType(InputType.TYPE_CLASS_NUMBER);
+        amount.setSingleLine(true);
+        amount.setText("0");
+        amount.setSelectAllOnFocus(true);
+        cell.addView(amount, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        parent.addView(cell, new LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+        ));
+        return amount;
+    }
+
+    private void addBackpackLayout(LinearLayout parent, FrameLayout content) {
+        LinearLayout backpack = verticalLayout(8);
+        backpack.setPadding(dp(8), dp(8), dp(8), dp(8));
+        backpack.setBackgroundResource(R.drawable.dnd_panel_bg);
+
+        addInventoryCategoryTabs(backpack, content);
+        addInventoryGrid(backpack);
+        addCoinBelt(backpack);
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        params.setMargins(0, dp(8), 0, dp(12));
+        parent.addView(backpack, params);
+    }
+
+    private void addInventoryCategoryTabs(LinearLayout parent, FrameLayout content) {
+        LinearLayout tabs = new LinearLayout(this);
+        tabs.setOrientation(LinearLayout.HORIZONTAL);
+        tabs.setGravity(Gravity.CENTER);
+
+        for (int index = 0; index < INVENTORY_CATEGORIES.length; index++) {
+            FrameLayout tab = new FrameLayout(this);
+            tab.setPadding(dp(2), dp(2), dp(2), dp(2));
+            tab.setBackgroundColor(index == selectedInventoryCategory ? 0xFFC8A86A : 0xFFE4D7C7);
+            tab.setContentDescription(INVENTORY_CATEGORIES[index]);
+
+            ImageView icon = new ImageView(this);
+            icon.setImageResource(INVENTORY_CATEGORY_ICONS[index]);
+            icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            tab.addView(icon, new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    Gravity.CENTER
+            ));
+
+            final int categoryIndex = index;
+            tab.setOnClickListener(view -> {
+                selectedInventoryCategory = categoryIndex;
+                renderTab(content);
+            });
+
+            LinearLayout.LayoutParams tabParams = new LinearLayout.LayoutParams(
+                    0,
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    1f
+            );
+            tabParams.setMargins(dp(2), 0, dp(2), 0);
+            tabs.addView(tab, tabParams);
+        }
+
+        parent.addView(tabs, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(50)
+        ));
+    }
+
+    private void addInventoryGrid(LinearLayout parent) {
+        LinearLayout grid = verticalLayout(6);
+        grid.setPadding(0, dp(4), 0, dp(4));
+
+        int itemCount = 0;
+        int rows = Math.max(1, (itemCount / INVENTORY_COLUMNS) + 1);
+        for (int rowIndex = 0; rowIndex < rows; rowIndex++) {
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+
+            for (int columnIndex = 0; columnIndex < INVENTORY_COLUMNS; columnIndex++) {
+                int slotIndex = rowIndex * INVENTORY_COLUMNS + columnIndex;
+                TextView slot = new TextView(this);
+                slot.setBackgroundResource(R.drawable.dnd_empty_slot_bg);
+                slot.setTextColor(0xFF5F5043);
+                slot.setGravity(Gravity.CENTER);
+                slot.setContentDescription(INVENTORY_CATEGORIES[selectedInventoryCategory] + " " + (slotIndex + 1));
+                slot.setOnClickListener(view -> Toast.makeText(
+                        this,
+                        INVENTORY_CATEGORIES[selectedInventoryCategory] + ": пустая ячейка",
+                        Toast.LENGTH_SHORT
+                ).show());
+
+                LinearLayout.LayoutParams slotParams = new LinearLayout.LayoutParams(
+                        0,
+                        dp(76),
+                        1f
+                );
+                slotParams.setMargins(dp(3), dp(3), dp(3), dp(3));
+                row.addView(slot, slotParams);
+            }
+
+            grid.addView(row, new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            ));
+        }
+
+        parent.addView(grid, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+    }
+
+    private void addCoinBelt(LinearLayout parent) {
+        LinearLayout belt = new LinearLayout(this);
+        belt.setOrientation(LinearLayout.HORIZONTAL);
+        belt.setGravity(Gravity.CENTER_VERTICAL);
+        belt.setPadding(dp(6), dp(4), dp(6), dp(4));
+        belt.setBackgroundResource(R.drawable.dnd_slot_bg);
+
+        addCoinCell(belt, R.drawable.coin_platinum, String.valueOf(selectedCharacter.platinumCoins));
+        addCoinCell(belt, R.drawable.coin_gold, String.valueOf(selectedCharacter.goldCoins));
+        addCoinCell(belt, R.drawable.coin_silver, String.valueOf(selectedCharacter.silverCoins));
+        addCoinCell(belt, R.drawable.coin_copper, String.valueOf(selectedCharacter.copperCoins));
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(50)
+        );
+        params.setMargins(0, dp(4), 0, 0);
+        parent.addView(belt, params);
+    }
+
+    private void addCoinCell(LinearLayout parent, int iconResource, String amount) {
+        LinearLayout coin = new LinearLayout(this);
+        coin.setOrientation(LinearLayout.HORIZONTAL);
+        coin.setGravity(Gravity.CENTER);
+
+        ImageView icon = new ImageView(this);
+        icon.setImageResource(iconResource);
+        icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        coin.addView(icon, new LinearLayout.LayoutParams(dp(28), dp(28)));
+
+        TextView value = bodyText(amount);
+        value.setTextColor(0xFFF0E1C7);
+        value.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        value.setGravity(Gravity.CENTER);
+        value.setPadding(dp(4), 0, 0, 0);
+        coin.addView(value, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.MATCH_PARENT
+        ));
+
+        parent.addView(coin, new LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                1f
+        ));
     }
 
     private View characterRow(DndCharacter character) {
@@ -484,7 +819,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void addEquipmentLayout(LinearLayout parent) {
         FrameLayout equipment = new AspectRatioFrameLayout(this);
-        equipment.setBackgroundResource(R.drawable.dnd_slot_bg);
 
         ImageView background = new ImageView(this);
         background.setImageResource(classImageResource(selectedCharacter.characterClass));
@@ -494,22 +828,30 @@ public class MainActivity extends AppCompatActivity {
                 FrameLayout.LayoutParams.MATCH_PARENT
         ));
 
-        addEquipmentSlot(equipment, "Шлем", 419, 52, 160, 145);
-        addEquipmentSlot(equipment, "Наплечник левый", 102, 215, 162, 146);
-        addEquipmentSlot(equipment, "Наплечник правый", 760, 215, 162, 146);
-        addEquipmentSlot(equipment, "Серьга 1", 72, 407, 128, 126);
-        addEquipmentSlot(equipment, "Серьга 2", 784, 407, 128, 126);
-        addEquipmentSlot(equipment, "Кулон", 428, 384, 138, 120);
-        addEquipmentSlot(equipment, "Перчатка левая", 56, 620, 118, 126);
-        addEquipmentSlot(equipment, "Перчатка правая", 850, 620, 118, 126);
-        addEquipmentSlot(equipment, "Нагрудник", 407, 555, 174, 154);
-        addEquipmentSlot(equipment, "Пояс", 423, 790, 138, 112);
-        addEquipmentSlot(equipment, "Первичное оружие", 53, 860, 121, 470);
-        addEquipmentSlot(equipment, "Вторичное оружие", 852, 860, 120, 470);
-        addEquipmentSlot(equipment, "Кольцо 1", 210, 956, 86, 108);
-        addEquipmentSlot(equipment, "Кольцо 2", 753, 956, 88, 108);
-        addEquipmentSlot(equipment, "Штаны", 425, 1047, 142, 138);
-        addEquipmentSlot(equipment, "Ботинки", 429, 1296, 138, 114);
+        ImageView frame = new ImageView(this);
+        frame.setImageResource(R.drawable.equipment_frame);
+        frame.setScaleType(ImageView.ScaleType.FIT_XY);
+        equipment.addView(frame, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+        ));
+
+        addEquipmentSlot(equipment, "Шлем", 560, 94, 168, 162);
+        addEquipmentSlot(equipment, "Наплечник левый", 210, 406, 184, 168);
+        addEquipmentSlot(equipment, "Наплечник правый", 900, 401, 182, 167);
+        addEquipmentSlot(equipment, "Серьга 1", 384, 167, 126, 130);
+        addEquipmentSlot(equipment, "Серьга 2", 772, 160, 128, 130);
+        addEquipmentSlot(equipment, "Кулон", 577, 316, 130, 116);
+        addEquipmentSlot(equipment, "Перчатка левая", 214, 704, 185, 175);
+        addEquipmentSlot(equipment, "Перчатка правая", 897, 694, 183, 174);
+        addEquipmentSlot(equipment, "Нагрудник", 540, 482, 195, 212);
+        addEquipmentSlot(equipment, "Пояс", 555, 892, 155, 116);
+        addEquipmentSlot(equipment, "Первичное оружие", 121, 1099, 161, 470);
+        addEquipmentSlot(equipment, "Вторичное оружие", 1000, 1102, 161, 477);
+        addEquipmentSlot(equipment, "Кольцо 1", 309, 973, 93, 100);
+        addEquipmentSlot(equipment, "Кольцо 2", 867, 962, 96, 100);
+        addEquipmentSlot(equipment, "Штаны", 544, 1137, 195, 228);
+        addEquipmentSlot(equipment, "Ботинки", 543, 1467, 201, 188);
 
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -521,8 +863,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void addEquipmentSlot(FrameLayout equipment, String slot, int left, int top, int width, int height) {
         View slotView = new View(this);
-        slotView.setBackgroundResource(R.drawable.dnd_empty_slot_bg);
-        slotView.setAlpha(0.42f);
+        slotView.setBackgroundColor(0x66D0D0D0);
         slotView.setContentDescription(slot);
         slotView.setOnClickListener(view -> Toast.makeText(this, slot + ": пусто", Toast.LENGTH_SHORT).show());
 
@@ -532,10 +873,10 @@ public class MainActivity extends AppCompatActivity {
             int equipmentWidth = rightEdge - leftEdge;
             int equipmentHeight = bottomEdge - topEdge;
             FrameLayout.LayoutParams updatedParams = (FrameLayout.LayoutParams) slotView.getLayoutParams();
-            updatedParams.width = Math.round(equipmentWidth * (width / 1024f));
-            updatedParams.height = Math.round(equipmentHeight * (height / 1536f));
-            updatedParams.leftMargin = Math.round(equipmentWidth * (left / 1024f));
-            updatedParams.topMargin = Math.round(equipmentHeight * (top / 1536f));
+            updatedParams.width = Math.round(equipmentWidth * (width / EQUIPMENT_DESIGN_WIDTH));
+            updatedParams.height = Math.round(equipmentHeight * (height / EQUIPMENT_DESIGN_HEIGHT));
+            updatedParams.leftMargin = Math.round(equipmentWidth * (left / EQUIPMENT_DESIGN_WIDTH));
+            updatedParams.topMargin = Math.round(equipmentHeight * (top / EQUIPMENT_DESIGN_HEIGHT));
             slotView.setLayoutParams(updatedParams);
         });
     }
@@ -947,6 +1288,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private static long moneyAsCopper(int platinum, int gold, int silver, int copper) {
+        return (((long) platinum * 100 + gold) * 100 + silver) * 100 + copper;
+    }
+
     private int dp(int value) {
         return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
     }
@@ -1011,6 +1356,10 @@ public class MainActivity extends AppCompatActivity {
         final List<String> languages;
         final List<String> savingThrows;
         final List<List<String>> spellbook;
+        int platinumCoins;
+        int goldCoins;
+        int silverCoins;
+        int copperCoins;
 
         DndCharacter(
                 String name,
@@ -1054,7 +1403,11 @@ public class MainActivity extends AppCompatActivity {
                     0,
                     new ArrayList<>(),
                     new ArrayList<>(),
-                    createEmptySpellbook()
+                    createEmptySpellbook(),
+                    0,
+                    0,
+                    0,
+                    0
             );
         }
 
@@ -1117,7 +1470,11 @@ public class MainActivity extends AppCompatActivity {
                     initiative,
                     languages,
                     savingThrows,
-                    createEmptySpellbook()
+                    createEmptySpellbook(),
+                    0,
+                    0,
+                    0,
+                    0
             );
         }
 
@@ -1152,6 +1509,78 @@ public class MainActivity extends AppCompatActivity {
                 List<String> savingThrows,
                 List<List<String>> spellbook
         ) {
+            this(
+                    name,
+                    characterClass,
+                    level,
+                    strength,
+                    dexterity,
+                    constitution,
+                    intelligence,
+                    charisma,
+                    wisdom,
+                    speed,
+                    armorClass,
+                    race,
+                    background,
+                    alignment,
+                    currentHp,
+                    maxHp,
+                    temporaryHp,
+                    hitDice,
+                    proficiencyBonus,
+                    perception,
+                    featuresAndTraits,
+                    personalityTraits,
+                    ideals,
+                    bonds,
+                    flaws,
+                    initiative,
+                    languages,
+                    savingThrows,
+                    spellbook,
+                    0,
+                    0,
+                    0,
+                    0
+            );
+        }
+
+        DndCharacter(
+                String name,
+                String characterClass,
+                int level,
+                int strength,
+                int dexterity,
+                int constitution,
+                int intelligence,
+                int charisma,
+                int wisdom,
+                int speed,
+                int armorClass,
+                String race,
+                String background,
+                String alignment,
+                int currentHp,
+                int maxHp,
+                int temporaryHp,
+                String hitDice,
+                int proficiencyBonus,
+                int perception,
+                String featuresAndTraits,
+                String personalityTraits,
+                String ideals,
+                String bonds,
+                String flaws,
+                int initiative,
+                List<String> languages,
+                List<String> savingThrows,
+                List<List<String>> spellbook,
+                int platinumCoins,
+                int goldCoins,
+                int silverCoins,
+                int copperCoins
+        ) {
             this.name = name;
             this.characterClass = characterClass;
             this.level = level;
@@ -1181,6 +1610,7 @@ public class MainActivity extends AppCompatActivity {
             this.languages = languages;
             this.savingThrows = savingThrows;
             this.spellbook = spellbook;
+            setMoneyFromCopper(MainActivity.moneyAsCopper(platinumCoins, goldCoins, silverCoins, copperCoins));
         }
 
         JSONObject toJson() {
@@ -1212,6 +1642,10 @@ public class MainActivity extends AppCompatActivity {
                 object.put("bonds", bonds);
                 object.put("flaws", flaws);
                 object.put("initiative", initiative);
+                object.put("platinumCoins", platinumCoins);
+                object.put("goldCoins", goldCoins);
+                object.put("silverCoins", silverCoins);
+                object.put("copperCoins", copperCoins);
                 JSONArray languagesArray = new JSONArray();
                 for (String language : languages) {
                     languagesArray.put(language);
@@ -1268,8 +1702,26 @@ public class MainActivity extends AppCompatActivity {
                     object.optInt("initiative", 0),
                     readLanguages(object.optJSONArray("languages")),
                     readSavingThrows(object.optJSONArray("savingThrows")),
-                    readSpellbook(object.optJSONArray("spellbook"))
+                    readSpellbook(object.optJSONArray("spellbook")),
+                    object.optInt("platinumCoins", 0),
+                    object.optInt("goldCoins", 0),
+                    object.optInt("silverCoins", 0),
+                    object.optInt("copperCoins", 0)
             );
+        }
+
+        long moneyAsCopper() {
+            return MainActivity.moneyAsCopper(platinumCoins, goldCoins, silverCoins, copperCoins);
+        }
+
+        void setMoneyFromCopper(long totalCopper) {
+            long normalizedTotal = Math.max(0, totalCopper);
+            platinumCoins = (int) (normalizedTotal / 1_000_000L);
+            normalizedTotal %= 1_000_000L;
+            goldCoins = (int) (normalizedTotal / 10_000L);
+            normalizedTotal %= 10_000L;
+            silverCoins = (int) (normalizedTotal / 100L);
+            copperCoins = (int) (normalizedTotal % 100L);
         }
 
         private static List<String> readSavingThrows(JSONArray savedSavingThrows) {
