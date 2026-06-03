@@ -36,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String PREFS_NAME = "dnd_characters";
     private static final String KEY_CHARACTERS = "characters";
     private static final int MAX_CHARACTERS = 15;
+    private static final int TOTAL_ABILITY_POINTS = 50;
 
     private static final int TAB_INVENTORY = 1;
     private static final int TAB_STATS = 2;
@@ -55,6 +56,44 @@ public class MainActivity extends AppCompatActivity {
             "Плут",
             "Следопыт",
             "Чародей"
+    };
+    private static final String[] RACE_OPTIONS = {
+            "Человек",
+            "Дварф",
+            "Эльф",
+            "Полурослик",
+            "Гном",
+            "Полуэльф",
+            "Полуорк",
+            "Тифлинг",
+            "Драконорожденный"
+    };
+    private static final String[] BACKGROUND_OPTIONS = {
+            "Аколит",
+            "Артист",
+            "Беспризорник",
+            "Благородный",
+            "Гильдейский ремесленник",
+            "Моряк",
+            "Мудрец",
+            "Народный герой",
+            "Отшельник",
+            "Преступник",
+            "Прислужник",
+            "Солдат",
+            "Чужеземец",
+            "Шарлатан"
+    };
+    private static final String[] ALIGNMENT_OPTIONS = {
+            "Законно-доброе",
+            "Нейтрально-доброе",
+            "Хаотично-доброе",
+            "Законно-нейтральное",
+            "Истинно нейтральное",
+            "Хаотично-нейтральное",
+            "Законно-злое",
+            "Нейтрально-злое",
+            "Хаотично-злое"
     };
     private static final String[] LANGUAGE_OPTIONS = {
             "Абиссал",
@@ -186,7 +225,7 @@ public class MainActivity extends AppCompatActivity {
 
         screen.addView(title("Новый персонаж"));
 
-        TextInputEditText nameInput = textInput(screen, "Имя персонажа", "Элара");
+        TextInputEditText nameInput = textInput(screen, "Имя персонажа", "");
         TextView selectedClass = bodyText("Класс не выбран");
         selectedClass.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         selectedClass.setPadding(0, dp(4), 0, dp(4));
@@ -202,9 +241,50 @@ public class MainActivity extends AppCompatActivity {
         screen.addView(selectedClass);
         screen.addView(classButton);
         TextInputEditText level = numberInput(screen, "Уровень", 1);
-        TextInputEditText race = textInput(screen, "Раса", "Человек");
-        TextInputEditText background = textInput(screen, "Предыстория", "Солдат");
-        TextInputEditText alignment = textInput(screen, "Мировоззрение", "Нейтральное");
+        TextView selectedRace = bodyText("Раса не выбрана");
+        selectedRace.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        selectedRace.setPadding(0, dp(4), 0, dp(4));
+        Button raceButton = secondaryButton("Выбрать расу");
+        final String[] raceValue = {""};
+        raceButton.setOnClickListener(view -> new AlertDialog.Builder(this)
+                .setTitle("Выберите расу")
+                .setItems(RACE_OPTIONS, (dialog, which) -> {
+                    raceValue[0] = RACE_OPTIONS[which];
+                    selectedRace.setText("Раса: " + raceValue[0]);
+                })
+                .show());
+        screen.addView(selectedRace);
+        screen.addView(raceButton);
+
+        TextView selectedBackground = bodyText("Предыстория не выбрана");
+        selectedBackground.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        selectedBackground.setPadding(0, dp(4), 0, dp(4));
+        Button backgroundButton = secondaryButton("Выбрать предысторию");
+        final String[] backgroundValue = {""};
+        backgroundButton.setOnClickListener(view -> new AlertDialog.Builder(this)
+                .setTitle("Выберите предысторию")
+                .setItems(BACKGROUND_OPTIONS, (dialog, which) -> {
+                    backgroundValue[0] = BACKGROUND_OPTIONS[which];
+                    selectedBackground.setText("Предыстория: " + backgroundValue[0]);
+                })
+                .show());
+        screen.addView(selectedBackground);
+        screen.addView(backgroundButton);
+
+        TextView selectedAlignment = bodyText("Мировоззрение не выбрано");
+        selectedAlignment.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        selectedAlignment.setPadding(0, dp(4), 0, dp(4));
+        Button alignmentButton = secondaryButton("Выбрать мировоззрение");
+        final String[] alignmentValue = {""};
+        alignmentButton.setOnClickListener(view -> new AlertDialog.Builder(this)
+                .setTitle("Выберите мировоззрение")
+                .setItems(ALIGNMENT_OPTIONS, (dialog, which) -> {
+                    alignmentValue[0] = ALIGNMENT_OPTIONS[which];
+                    selectedAlignment.setText("Мировоззрение: " + alignmentValue[0]);
+                })
+                .show());
+        screen.addView(selectedAlignment);
+        screen.addView(alignmentButton);
         TextView selectedLanguagesLabel = bodyText("Языки не выбраны");
         selectedLanguagesLabel.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         selectedLanguagesLabel.setPadding(0, dp(4), 0, dp(4));
@@ -246,17 +326,35 @@ public class MainActivity extends AppCompatActivity {
         screen.addView(selectedSavingThrowsLabel);
         screen.addView(savingThrowsButton);
 
+        TextView abilitiesLabel = bodyText("Характеристики");
+        abilitiesLabel.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        abilitiesLabel.setPadding(0, dp(4), 0, dp(4));
+        screen.addView(abilitiesLabel);
+
+        final int[] abilityValues = new int[6];
+        final int[] remainingAbilityPoints = {TOTAL_ABILITY_POINTS};
+        TextView remainingAbilityPointsLabel = bodyText("Свободные очки: " + remainingAbilityPoints[0]);
+        remainingAbilityPointsLabel.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        remainingAbilityPointsLabel.setPadding(0, dp(4), 0, dp(12));
+
+        GridLayout abilityGrid = new GridLayout(this);
+        abilityGrid.setColumnCount(2);
+        abilityGrid.setUseDefaultMargins(true);
+        screen.addView(abilityGrid);
+
+        addAbilityControl(abilityGrid, "Сила", abilityValues, 0, remainingAbilityPoints, remainingAbilityPointsLabel);
+        addAbilityControl(abilityGrid, "Ловкость", abilityValues, 1, remainingAbilityPoints, remainingAbilityPointsLabel);
+        addAbilityControl(abilityGrid, "Телосложение", abilityValues, 2, remainingAbilityPoints, remainingAbilityPointsLabel);
+        addAbilityControl(abilityGrid, "Интеллект", abilityValues, 3, remainingAbilityPoints, remainingAbilityPointsLabel);
+        addAbilityControl(abilityGrid, "Харизма", abilityValues, 4, remainingAbilityPoints, remainingAbilityPointsLabel);
+        addAbilityControl(abilityGrid, "Мудрость", abilityValues, 5, remainingAbilityPoints, remainingAbilityPointsLabel);
+        screen.addView(remainingAbilityPointsLabel);
+
         GridLayout statGrid = new GridLayout(this);
         statGrid.setColumnCount(2);
         statGrid.setUseDefaultMargins(true);
         screen.addView(statGrid);
 
-        TextInputEditText strength = numberInput(statGrid, "Сила", 10);
-        TextInputEditText dexterity = numberInput(statGrid, "Ловкость", 10);
-        TextInputEditText constitution = numberInput(statGrid, "Телосложение", 10);
-        TextInputEditText intelligence = numberInput(statGrid, "Интеллект", 10);
-        TextInputEditText charisma = numberInput(statGrid, "Харизма", 10);
-        TextInputEditText wisdom = numberInput(statGrid, "Мудрость", 10);
         TextInputEditText speed = numberInput(statGrid, "Скорость", 30);
         TextInputEditText armorClass = numberInput(statGrid, "Класс брони", 10);
         TextInputEditText currentHp = numberInput(statGrid, "Текущие ХП", 10);
@@ -285,17 +383,17 @@ public class MainActivity extends AppCompatActivity {
                     name,
                     classValue[0].isEmpty() ? "Без класса" : classValue[0],
                     intValue(level, 1),
-                    intValue(strength, 10),
-                    intValue(dexterity, 10),
-                    intValue(constitution, 10),
-                    intValue(intelligence, 10),
-                    intValue(charisma, 10),
-                    intValue(wisdom, 10),
+                    abilityValues[0],
+                    abilityValues[1],
+                    abilityValues[2],
+                    abilityValues[3],
+                    abilityValues[4],
+                    abilityValues[5],
                     intValue(speed, 30),
                     intValue(armorClass, 10),
-                    valueOrDefault(race, "Не указана"),
-                    valueOrDefault(background, "Не указана"),
-                    valueOrDefault(alignment, "Не указано"),
+                    raceValue[0].isEmpty() ? "Не указана" : raceValue[0],
+                    backgroundValue[0].isEmpty() ? "Не указана" : backgroundValue[0],
+                    alignmentValue[0].isEmpty() ? "Не указано" : alignmentValue[0],
                     intValue(currentHp, 10),
                     intValue(maxHp, 10),
                     intValue(temporaryHp, 0),
@@ -825,6 +923,67 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         return savingThrows;
+    }
+
+    private void addAbilityControl(
+            GridLayout parent,
+            String label,
+            int[] abilityValues,
+            int abilityIndex,
+            int[] remainingPoints,
+            TextView remainingPointsLabel
+    ) {
+        LinearLayout cell = verticalLayout(0);
+        cell.setPadding(dp(6), dp(6), dp(6), dp(6));
+
+        TextView name = bodyText(label);
+        name.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        name.setGravity(Gravity.CENTER);
+        cell.addView(name);
+
+        LinearLayout controls = new LinearLayout(this);
+        controls.setOrientation(LinearLayout.HORIZONTAL);
+        controls.setGravity(Gravity.CENTER);
+
+        Button minusButton = secondaryButton("-");
+        TextView value = bodyText(String.valueOf(abilityValues[abilityIndex]));
+        value.setTextSize(20);
+        value.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        value.setGravity(Gravity.CENTER);
+        Button plusButton = secondaryButton("+");
+
+        minusButton.setOnClickListener(view -> {
+            if (abilityValues[abilityIndex] <= 0) {
+                return;
+            }
+            abilityValues[abilityIndex]--;
+            remainingPoints[0]++;
+            value.setText(String.valueOf(abilityValues[abilityIndex]));
+            remainingPointsLabel.setText("Свободные очки: " + remainingPoints[0]);
+        });
+
+        plusButton.setOnClickListener(view -> {
+            if (remainingPoints[0] <= 0) {
+                return;
+            }
+            abilityValues[abilityIndex]++;
+            remainingPoints[0]--;
+            value.setText(String.valueOf(abilityValues[abilityIndex]));
+            remainingPointsLabel.setText("Свободные очки: " + remainingPoints[0]);
+        });
+
+        controls.addView(minusButton, new LinearLayout.LayoutParams(dp(44), dp(44)));
+        controls.addView(value, new LinearLayout.LayoutParams(dp(54), dp(44)));
+        controls.addView(plusButton, new LinearLayout.LayoutParams(dp(44), dp(44)));
+        cell.addView(controls);
+
+        GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+        params.width = 0;
+        params.height = GridLayout.LayoutParams.WRAP_CONTENT;
+        params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+        params.setMargins(0, dp(4), 0, dp(4));
+        cell.setLayoutParams(params);
+        parent.addView(cell);
     }
 
     private TextInputEditText textInput(LinearLayout parent, String label, String hint) {
