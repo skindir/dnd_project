@@ -22,4 +22,26 @@
     <style name="Theme.DNA_Project.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 
     <style name="Theme.DNA_Project.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+    <style name="SpellDialogLabel">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">12dp</item>
+        <item name="android:layout_marginBottom">4dp</item>
+        <item name="android:textColor">#5F554D</item>
+        <item name="android:textSize">13sp</item>
+    </style>
+
+    <style name="SpellDialogEditText">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">52dp</item>
+        <item name="android:background">#EEEEEE</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingEnd">12dp</item>
+        <item name="android:textColor">#2A211C</item>
+        <item name="android:textColorHint">#8A8178</item>
+        <item name="android:textSize">16sp</item>
+    </style>
 </resources>

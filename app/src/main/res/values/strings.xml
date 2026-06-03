@@ -8,7 +8,7 @@
     <string name="action_settings">Settings</string>
 
     <string name="menu_transform">Transform</string>
-    <string name="menu_reflow">Reflow</string>
+    <string name="menu_reflow">Книга заклинаний</string>
     <string name="menu_slideshow">Slideshow</string>
     <string name="menu_settings">Settings</string>
 
@@ -22,4 +22,30 @@
     <string name="image_view_item_transform_content_description">Represents an image view in the
         item
     </string>
+    <string name="spellbook_title">Книга заклинаний</string>
+    <string name="add_spell_title">Добавить заклинание - версия 2</string>
+    <string name="add_spell_to_level_title">Добавить в уровень %1$d - версия 2</string>
+    <string name="add_spell_action">Добавить</string>
+    <string name="add_spell_short_action">+</string>
+    <string name="spell_added_message">Заклинание добавлено</string>
+    <string name="required_field_error">Обязательное поле</string>
+    <string name="number_field_error">Введите число</string>
+    <string name="spell_level_range_error">Уровень должен быть от 0 до 9</string>
+    <string name="spell_level_title_format">Уровень %1$d</string>
+    <string name="empty_spell_list">Список пуст.</string>
+    <string name="spell_row_format">%1$s\n%2$s · %3$s %4$s</string>
+    <string name="spell_name_label">1. Название заклинания</string>
+    <string name="spell_name_hint">1. Введите название</string>
+    <string name="spell_level_label">2. Уровень заклинания</string>
+    <string name="spell_level_hint">2. Число 0-9</string>
+    <string name="spell_class_label">3. Класс персонажа</string>
+    <string name="spell_class_hint">3. Например: Wizard</string>
+    <string name="spell_range_label">4. Дистанция действия</string>
+    <string name="spell_range_hint">4. Например: 150 ft</string>
+    <string name="spell_attack_type_label">5. Тип атаки</string>
+    <string name="spell_attack_type_hint">5. Например: saving throw</string>
+    <string name="spell_damage_type_label">6. Тип урона</string>
+    <string name="spell_damage_type_hint">6. Например: Fire</string>
+    <string name="spell_damage_label">7. Формула урона</string>
+    <string name="spell_damage_hint">7. Например: 8d6</string>
 </resources>

@@ -6,4 +6,9 @@
     <dimen name="reflow_text_block_horizontal_gap">8dp</dimen>
     <dimen name="reflow_text_title_size">22sp</dimen>
     <dimen name="reflow_text_description_size">13sp</dimen>
+    <dimen name="spell_screen_padding">12dp</dimen>
+    <dimen name="spell_card_gap">10dp</dimen>
+    <dimen name="spell_card_padding">12dp</dimen>
+    <dimen name="spell_card_radius">6dp</dimen>
+    <dimen name="spell_text_gap">6dp</dimen>
 </resources>

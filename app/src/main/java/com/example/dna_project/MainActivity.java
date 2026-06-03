@@ -56,6 +56,31 @@ public class MainActivity extends AppCompatActivity {
             "Следопыт",
             "Чародей"
     };
+    private static final SpellDefinition[] SPELL_LIBRARY = {
+            new SpellDefinition("Fire Bolt", 0, "Wizard,Sorcerer,Artificer", "Ranged spell attack. Deals fire damage. Cantrip, does not spend spell uses."),
+            new SpellDefinition("Mage Hand", 0, "Wizard,Sorcerer,Warlock,Bard,Artificer", "Creates a spectral hand for simple interactions. Cantrip, does not spend spell uses."),
+            new SpellDefinition("Guidance", 0, "Cleric,Druid,Artificer", "Adds 1d4 to one ability check. Cantrip, does not spend spell uses."),
+            new SpellDefinition("Sacred Flame", 0, "Cleric", "Radiant flame forces a Dexterity save. Cantrip, does not spend spell uses."),
+            new SpellDefinition("Magic Missile", 1, "Wizard,Sorcerer", "Three darts automatically hit targets and deal force damage."),
+            new SpellDefinition("Cure Wounds", 1, "Cleric,Druid,Bard,Paladin,Ranger,Artificer", "Touch a creature to restore hit points."),
+            new SpellDefinition("Shield", 1, "Wizard,Sorcerer,Artificer", "Reaction. Gain +5 AC until the start of your next turn."),
+            new SpellDefinition("Thunderwave", 1, "Wizard,Sorcerer,Bard,Druid", "A wave of thunder pushes creatures and deals thunder damage."),
+            new SpellDefinition("Misty Step", 2, "Wizard,Sorcerer,Warlock", "Bonus action teleport up to 30 feet."),
+            new SpellDefinition("Scorching Ray", 2, "Wizard,Sorcerer", "Create three fire rays and make ranged spell attacks."),
+            new SpellDefinition("Lesser Restoration", 2, "Cleric,Druid,Bard,Paladin,Ranger,Artificer", "End one disease or condition on a creature."),
+            new SpellDefinition("Fireball", 3, "Wizard,Sorcerer", "A bright explosion deals fire damage in a large area."),
+            new SpellDefinition("Counterspell", 3, "Wizard,Sorcerer,Warlock", "Reaction. Interrupt a creature casting a spell."),
+            new SpellDefinition("Revivify", 3, "Cleric,Paladin,Artificer", "Return a recently dead creature to life."),
+            new SpellDefinition("Polymorph", 4, "Wizard,Sorcerer,Bard,Druid", "Transform a creature into a beast."),
+            new SpellDefinition("Wall of Fire", 4, "Wizard,Sorcerer,Druid", "Create a wall of flame that deals fire damage."),
+            new SpellDefinition("Cone of Cold", 5, "Wizard,Sorcerer", "A blast of cold air deals cold damage in a cone."),
+            new SpellDefinition("Mass Cure Wounds", 5, "Cleric,Druid,Bard", "Restore hit points to several creatures at once."),
+            new SpellDefinition("Disintegrate", 6, "Wizard,Sorcerer", "A green ray deals heavy force damage."),
+            new SpellDefinition("Heal", 6, "Cleric,Druid", "A creature regains a large amount of hit points."),
+            new SpellDefinition("Teleport", 7, "Wizard,Sorcerer,Bard", "Instantly transport yourself and companions."),
+            new SpellDefinition("Power Word Stun", 8, "Wizard,Sorcerer,Bard,Warlock", "Stun a creature with 150 hit points or fewer."),
+            new SpellDefinition("Wish", 9, "Wizard,Sorcerer", "The mightiest spell, capable of reshaping reality.")
+    };
 
     private final List<DndCharacter> characters = new ArrayList<>();
     private SharedPreferences preferences;
@@ -215,9 +240,9 @@ public class MainActivity extends AppCompatActivity {
         screen.addView(content, contentParams);
 
         BottomNavigationView navigation = new BottomNavigationView(this);
-        navigation.getMenu().add(0, TAB_INVENTORY, 0, "Инвентарь").setIcon(android.R.drawable.ic_menu_agenda);
-        navigation.getMenu().add(0, TAB_STATS, 1, "Характеристики").setIcon(android.R.drawable.ic_menu_info_details);
-        navigation.getMenu().add(0, TAB_SPELLBOOK, 2, "Книга заклинаний").setIcon(android.R.drawable.ic_menu_upload);
+        navigation.getMenu().add(0, TAB_INVENTORY, 0, "Bag").setIcon(android.R.drawable.ic_menu_agenda);
+        navigation.getMenu().add(0, TAB_STATS, 1, "Stats").setIcon(android.R.drawable.ic_menu_info_details);
+        navigation.getMenu().add(0, TAB_SPELLBOOK, 2, "Spells").setIcon(android.R.drawable.ic_menu_upload);
         navigation.setSelectedItemId(selectedTab);
         navigation.setOnItemSelectedListener(item -> {
             selectedTab = item.getItemId();
@@ -226,7 +251,7 @@ public class MainActivity extends AppCompatActivity {
         });
         screen.addView(navigation, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                dp(64)
+                dp(72)
         ));
 
         Button selectOther = secondaryButton("Сменить персонажа");
@@ -272,6 +297,17 @@ public class MainActivity extends AppCompatActivity {
         } else {
             body.addView(sectionTitle("Книга заклинаний"));
             Button addSpell = primaryButton("Добавить заклинание");
+            body.addView(bodyText("Spell uses"));
+            addSpellUseCells(body);
+            LinearLayout restButtons = new LinearLayout(this);
+            restButtons.setOrientation(LinearLayout.HORIZONTAL);
+            Button shortRest = secondaryButton("Short rest");
+            shortRest.setOnClickListener(view -> restoreSpellUses("Short rest"));
+            Button longRest = secondaryButton("Long rest");
+            longRest.setOnClickListener(view -> restoreSpellUses("Long rest"));
+            restButtons.addView(shortRest, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+            restButtons.addView(longRest, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+            body.addView(restButtons);
             addSpell.setOnClickListener(view -> showAddSpellDialog(-1));
             body.addView(addSpell);
             addSpellLevels(body);
@@ -426,6 +462,55 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void restoreSpellUses(String restName) {
+        selectedCharacter.currentSpellUses = selectedCharacter.maxSpellUses;
+        saveCharacters();
+        Toast.makeText(this, restName + ": spell uses restored", Toast.LENGTH_SHORT).show();
+        showCharacterSheet();
+    }
+
+    private void addSpellUseCells(LinearLayout parent) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setPadding(0, dp(4), 0, dp(8));
+
+        for (int index = 0; index < selectedCharacter.maxSpellUses; index++) {
+            TextView cell = new TextView(this);
+            cell.setText("");
+            cell.setBackgroundColor(index < selectedCharacter.currentSpellUses ? 0xFF4CAF50 : 0xFFE53935);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, dp(18), 1f);
+            params.setMargins(dp(2), 0, dp(2), 0);
+            row.addView(cell, params);
+        }
+
+        parent.addView(row, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+    }
+
+    private int maxLearnableSpellLevel() {
+        int level = selectedCharacter.level;
+        if (level >= 17) {
+            return 9;
+        } else if (level >= 15) {
+            return 8;
+        } else if (level >= 13) {
+            return 7;
+        } else if (level >= 11) {
+            return 6;
+        } else if (level >= 9) {
+            return 5;
+        } else if (level >= 7) {
+            return 4;
+        } else if (level >= 5) {
+            return 3;
+        } else if (level >= 3) {
+            return 2;
+        }
+        return 1;
+    }
+
     private void addSpellLevels(LinearLayout parent) {
         for (int level = 0; level <= 9; level++) {
             parent.addView(spellLevelFrame(level));
@@ -455,7 +540,10 @@ public class MainActivity extends AppCompatActivity {
             frame.addView(bodyText("Список пуст."));
         } else {
             for (String spell : spells) {
-                frame.addView(bodyText("- " + spell));
+                TextView spellView = bodyText("- " + displaySpellName(spell));
+                spellView.setPadding(0, dp(6), 0, dp(6));
+                spellView.setOnClickListener(view -> showSpellDetails(spellLevel, displaySpellName(spell)));
+                frame.addView(spellView);
             }
         }
 
@@ -469,6 +557,107 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showAddSpellDialog(int presetLevel) {
+        List<SpellDefinition> availableSpells = availableSpellsFor(presetLevel);
+        if (availableSpells.isEmpty()) {
+            Toast.makeText(this, "Нет доступных заклинаний для добавления", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String[] spellNames = new String[availableSpells.size()];
+        for (int index = 0; index < availableSpells.size(); index++) {
+            SpellDefinition spell = availableSpells.get(index);
+            spellNames[index] = "Level " + spell.level + " - " + spell.name;
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle(presetLevel >= 0 ? "Доступные spell level " + presetLevel : "Доступные spell")
+                .setItems(spellNames, (dialog, which) -> {
+                    SpellDefinition spell = availableSpells.get(which);
+                    selectedCharacter.spellbook.get(spell.level).add(spell.name);
+                    saveCharacters();
+                    showCharacterSheet();
+                })
+                .setNegativeButton("Отмена", null)
+                .show();
+    }
+
+    private void oldManualAddSpellDialog(int presetLevel) {
+        ScrollView scrollView = new ScrollView(this);
+        scrollView.setFillViewport(true);
+
+        LinearLayout form = verticalLayout(12);
+        form.setPadding(dp(22), dp(10), dp(22), dp(18));
+        scrollView.addView(form, new ScrollView.LayoutParams(
+                ScrollView.LayoutParams.MATCH_PARENT,
+                ScrollView.LayoutParams.WRAP_CONTENT
+        ));
+
+        EditText spellName = spellDialogInput(form, "1. Название заклинания", "Например: Огненный шар", false);
+        EditText spellLevel = null;
+        if (presetLevel < 0) {
+            spellLevel = spellDialogInput(form, "2. Уровень заклинания", "0-9", true);
+            spellLevel.setText("0");
+        } else {
+            TextView fixedLevel = bodyText("2. Уровень заклинания: " + presetLevel);
+            fixedLevel.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+            fixedLevel.setPadding(0, dp(8), 0, dp(8));
+            form.addView(fixedLevel);
+        }
+
+        EditText spellClass = spellDialogInput(form, "3. Класс персонажа", "Например: Wizard", false);
+        EditText spellRange = spellDialogInput(form, "4. Дистанция действия", "Например: 150 ft", false);
+        EditText spellAttackType = spellDialogInput(form, "5. Тип атаки", "Например: saving throw", false);
+        EditText spellDamageType = spellDialogInput(form, "6. Тип урона", "Например: Fire", false);
+        EditText spellDamage = spellDialogInput(form, "7. Формула урона", "Например: 8d6", false);
+
+        EditText finalSpellLevel = spellLevel;
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(presetLevel >= 0 ? "Добавить в уровень " + presetLevel + " - версия 3" : "Добавить заклинание - версия 3")
+                .setView(scrollView)
+                .setPositiveButton("Добавить", null)
+                .setNegativeButton("Отмена", null)
+                .create();
+
+        dialog.setOnShowListener(openDialog -> {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
+                String name = value(spellName).trim();
+                if (name.isEmpty()) {
+                    spellName.setError("Введите название");
+                    return;
+                }
+
+                int level = presetLevel >= 0 ? presetLevel : intValue(finalSpellLevel, 0);
+                if (level < 0 || level > 9) {
+                    if (finalSpellLevel != null) {
+                        finalSpellLevel.setError("Уровень должен быть от 0 до 9");
+                    }
+                    return;
+                }
+
+                String className = valueOrDefault(spellClass, "Без класса");
+                String range = valueOrDefault(spellRange, "Без дистанции");
+                String attackType = valueOrDefault(spellAttackType, "Без типа атаки");
+                String damageType = valueOrDefault(spellDamageType, "Без типа урона");
+                String damage = valueOrDefault(spellDamage, "Без урона");
+                String spellDetails = name + " | " + className + " | " + range + " | " + attackType + " | " + damage + " " + damageType;
+
+                selectedCharacter.spellbook.get(level).add(spellDetails);
+                saveCharacters();
+                dialog.dismiss();
+                showCharacterSheet();
+            });
+
+            if (dialog.getWindow() != null) {
+                dialog.getWindow().setLayout(
+                        (int) (getResources().getDisplayMetrics().widthPixels * 0.96f),
+                        (int) (getResources().getDisplayMetrics().heightPixels * 0.88f)
+                );
+            }
+        });
+        dialog.show();
+    }
+
+    private void oldShowAddSpellDialog(int presetLevel) {
         LinearLayout form = verticalLayout(10);
         form.setPadding(dp(20), dp(8), dp(20), 0);
 
@@ -505,6 +694,129 @@ public class MainActivity extends AppCompatActivity {
 
     private void addStat(LinearLayout parent, String label, int value) {
         addStat(parent, label, String.valueOf(value));
+    }
+
+    private List<SpellDefinition> availableSpellsFor(int presetLevel) {
+        List<SpellDefinition> result = new ArrayList<>();
+        int maxLevel = maxLearnableSpellLevel();
+        for (SpellDefinition spell : SPELL_LIBRARY) {
+            if (presetLevel >= 0 && spell.level != presetLevel) {
+                continue;
+            }
+            if (spell.level > maxLevel) {
+                continue;
+            }
+            if (learnedSpell(spell.name)) {
+                continue;
+            }
+            if (canLearnSpell(spell)) {
+                result.add(spell);
+            }
+        }
+        return result;
+    }
+
+    private boolean learnedSpell(String spellName) {
+        for (List<String> levelSpells : selectedCharacter.spellbook) {
+            for (String learned : levelSpells) {
+                if (displaySpellName(learned).equalsIgnoreCase(spellName)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean canLearnSpell(SpellDefinition spell) {
+        String characterClass = selectedCharacter.characterClass.toLowerCase();
+        if (characterClass.contains("wizard") || characterClass.contains("волшеб")) {
+            return spell.classes.contains("Wizard");
+        } else if (characterClass.contains("sorcerer") || characterClass.contains("чарод")) {
+            return spell.classes.contains("Sorcerer");
+        } else if (characterClass.contains("warlock") || characterClass.contains("колдун")) {
+            return spell.classes.contains("Warlock");
+        } else if (characterClass.contains("cleric") || characterClass.contains("жрец")) {
+            return spell.classes.contains("Cleric");
+        } else if (characterClass.contains("druid") || characterClass.contains("друид")) {
+            return spell.classes.contains("Druid");
+        } else if (characterClass.contains("bard") || characterClass.contains("бард")) {
+            return spell.classes.contains("Bard");
+        } else if (characterClass.contains("paladin") || characterClass.contains("палад")) {
+            return spell.classes.contains("Paladin");
+        } else if (characterClass.contains("ranger") || characterClass.contains("следоп")) {
+            return spell.classes.contains("Ranger");
+        } else if (characterClass.contains("artificer") || characterClass.contains("изобрет")) {
+            return spell.classes.contains("Artificer");
+        }
+        return true;
+    }
+
+    private String displaySpellName(String savedSpell) {
+        int separator = savedSpell.indexOf("|");
+        if (separator >= 0) {
+            return savedSpell.substring(0, separator).trim();
+        }
+        return savedSpell.trim();
+    }
+
+    private SpellDefinition findSpell(String spellName) {
+        for (SpellDefinition spell : SPELL_LIBRARY) {
+            if (spell.name.equalsIgnoreCase(spellName)) {
+                return spell;
+            }
+        }
+        return null;
+    }
+
+    private void showSpellDetails(int spellLevel, String spellName) {
+        SpellDefinition spell = findSpell(spellName);
+        String description = spell == null
+                ? "Описание недоступно для старого заклинания."
+                : spell.description;
+        boolean cantrip = spellLevel == 0;
+        String message = description + "\n\nLevel: " + spellLevel + "\nUses: "
+                + selectedCharacter.currentSpellUses + " / " + selectedCharacter.maxSpellUses
+                + (cantrip ? "\nCantrip: does not spend uses." : "");
+
+        new AlertDialog.Builder(this)
+                .setTitle(spellName)
+                .setMessage(message)
+                .setPositiveButton("Применить", (dialog, which) -> castSpell(spellLevel, spellName))
+                .setNegativeButton("Закрыть", null)
+                .show();
+    }
+
+    private void castSpell(int spellLevel, String spellName) {
+        if (spellLevel > 0) {
+            if (selectedCharacter.currentSpellUses <= 0) {
+                Toast.makeText(this, "Нет доступных spell uses. Сделайте rest.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            selectedCharacter.currentSpellUses--;
+        }
+        saveCharacters();
+        Toast.makeText(this, spellName + " применен", Toast.LENGTH_SHORT).show();
+        showCharacterSheet();
+    }
+
+    private EditText spellDialogInput(LinearLayout parent, String label, String hint, boolean numberOnly) {
+        TextView labelView = bodyText(label);
+        labelView.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        labelView.setPadding(0, dp(10), 0, dp(4));
+        parent.addView(labelView);
+
+        EditText input = new EditText(this);
+        input.setSingleLine(true);
+        input.setHint(hint);
+        input.setTextSize(16);
+        input.setPadding(dp(12), 0, dp(12), 0);
+        input.setBackgroundColor(0xFFE4E0DC);
+        input.setInputType(numberOnly ? InputType.TYPE_CLASS_NUMBER : InputType.TYPE_CLASS_TEXT);
+        parent.addView(input, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(54)
+        ));
+        return input;
     }
 
     private void addStat(LinearLayout parent, String label, String value) {
@@ -665,6 +977,20 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private static class SpellDefinition {
+        final String name;
+        final int level;
+        final String classes;
+        final String description;
+
+        SpellDefinition(String name, int level, String classes, String description) {
+            this.name = name;
+            this.level = level;
+            this.classes = classes;
+            this.description = description;
+        }
+    }
+
     private static class DndCharacter {
         final String name;
         final String characterClass;
@@ -677,6 +1003,8 @@ public class MainActivity extends AppCompatActivity {
         final int speed;
         final int armorClass;
         final List<List<String>> spellbook;
+        final int maxSpellUses;
+        int currentSpellUses;
 
         DndCharacter(
                 String name,
@@ -690,7 +1018,7 @@ public class MainActivity extends AppCompatActivity {
                 int speed,
                 int armorClass
         ) {
-            this(name, characterClass, level, strength, dexterity, intelligence, charisma, wisdom, speed, armorClass, createEmptySpellbook());
+            this(name, characterClass, level, strength, dexterity, intelligence, charisma, wisdom, speed, armorClass, createEmptySpellbook(), maxSpellUsesForLevel(level), maxSpellUsesForLevel(level));
         }
 
         DndCharacter(
@@ -706,6 +1034,24 @@ public class MainActivity extends AppCompatActivity {
                 int armorClass,
                 List<List<String>> spellbook
         ) {
+            this(name, characterClass, level, strength, dexterity, intelligence, charisma, wisdom, speed, armorClass, spellbook, maxSpellUsesForLevel(level), maxSpellUsesForLevel(level));
+        }
+
+        DndCharacter(
+                String name,
+                String characterClass,
+                int level,
+                int strength,
+                int dexterity,
+                int intelligence,
+                int charisma,
+                int wisdom,
+                int speed,
+                int armorClass,
+                List<List<String>> spellbook,
+                int maxSpellUses,
+                int currentSpellUses
+        ) {
             this.name = name;
             this.characterClass = characterClass;
             this.level = level;
@@ -717,6 +1063,8 @@ public class MainActivity extends AppCompatActivity {
             this.speed = speed;
             this.armorClass = armorClass;
             this.spellbook = spellbook;
+            this.maxSpellUses = maxSpellUses;
+            this.currentSpellUses = Math.min(currentSpellUses, maxSpellUses);
         }
 
         JSONObject toJson() {
@@ -742,6 +1090,8 @@ public class MainActivity extends AppCompatActivity {
                     spellbookArray.put(spellsArray);
                 }
                 object.put("spellbook", spellbookArray);
+                object.put("maxSpellUses", maxSpellUses);
+                object.put("currentSpellUses", currentSpellUses);
             } catch (JSONException ignored) {
                 // Values are local primitive fields, so JSON errors are not expected here.
             }
@@ -760,8 +1110,25 @@ public class MainActivity extends AppCompatActivity {
                     object.optInt("wisdom", 10),
                     object.optInt("speed", 30),
                     object.optInt("armorClass", 10),
-                    readSpellbook(object.optJSONArray("spellbook"))
+                    readSpellbook(object.optJSONArray("spellbook")),
+                    object.optInt("maxSpellUses", maxSpellUsesForLevel(object.optInt("level", 1))),
+                    object.optInt("currentSpellUses", object.optInt("maxSpellUses", maxSpellUsesForLevel(object.optInt("level", 1))))
             );
+        }
+
+        private static int maxSpellUsesForLevel(int level) {
+            if (level >= 17) {
+                return 14;
+            } else if (level >= 13) {
+                return 12;
+            } else if (level >= 9) {
+                return 10;
+            } else if (level >= 5) {
+                return 6;
+            } else if (level >= 3) {
+                return 4;
+            }
+            return 2;
         }
 
         private static List<List<String>> createEmptySpellbook() {
