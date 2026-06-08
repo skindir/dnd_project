@@ -36,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String PREFS_NAME = "dnd_characters";
     private static final String KEY_CHARACTERS = "characters";
     private static final int MAX_CHARACTERS = 15;
+    private static final int TOTAL_ABILITY_POINTS = 50;
 
     private static final int TAB_INVENTORY = 1;
     private static final int TAB_STATS = 2;
@@ -45,13 +46,13 @@ public class MainActivity extends AppCompatActivity {
     private static final float EQUIPMENT_DESIGN_HEIGHT = 1754f;
     private static final int INVENTORY_COLUMNS = 7;
     private static final String[] INVENTORY_CATEGORIES = {
-            "Оружие",
-            "Броня",
-            "Аксесуары",
-            "Инструменты",
-            "Материалы",
-            "Прочее",
-            "Квестовые предметы"
+            "Weapons",
+            "Armor",
+            "Accessories",
+            "Tools",
+            "Materials",
+            "Other",
+            "Quest Items"
     };
     private static final int[] INVENTORY_CATEGORY_ICONS = {
             R.drawable.tab_weapon,
@@ -63,19 +64,19 @@ public class MainActivity extends AppCompatActivity {
             R.drawable.tab_key_items
     };
     private static final String[] CHARACTER_CLASSES = {
-            "Бард",
-            "Варвар",
-            "Воин",
-            "Волшебник",
-            "Друид",
-            "Жрец",
-            "Изобретатель",
-            "Колдун",
-            "Монах",
-            "Паладин",
-            "Плут",
-            "Следопыт",
-            "Чародей"
+            "Bard",
+            "Barbarian",
+            "Fighter",
+            "Wizard",
+            "Druid",
+            "Cleric",
+            "Artificer",
+            "Warlock",
+            "Monk",
+            "Paladin",
+            "Rogue",
+            "Ranger",
+            "Sorcerer"
     };
     private static final SpellDefinition[] SPELL_LIBRARY = {
             new SpellDefinition("Fire Bolt", 0, "Wizard,Sorcerer,Artificer", "Ranged spell attack. Deals fire damage. Cantrip, does not spend spell uses."),
@@ -102,59 +103,137 @@ public class MainActivity extends AppCompatActivity {
             new SpellDefinition("Power Word Stun", 8, "Wizard,Sorcerer,Bard,Warlock", "Stun a creature with 150 hit points or fewer."),
             new SpellDefinition("Wish", 9, "Wizard,Sorcerer", "The mightiest spell, capable of reshaping reality.")
     };
+    private static final String[] RACE_OPTIONS = {
+            "Human",
+            "Dwarf",
+            "Elf",
+            "Halfling",
+            "Gnome",
+            "Half-Elf",
+            "Half-Orc",
+            "Tiefling",
+            "Dragonborn"
+    };
+    private static final String[] BACKGROUND_OPTIONS = {
+            "Acolyte",
+            "Entertainer",
+            "Urchin",
+            "Noble",
+            "Guild Artisan",
+            "Sailor",
+            "Sage",
+            "Folk Hero",
+            "Hermit",
+            "Criminal",
+            "Retainer",
+            "Soldier",
+            "Outlander",
+            "Charlatan"
+    };
+    private static final String[] ALIGNMENT_OPTIONS = {
+            "Lawful Good",
+            "Neutral Good",
+            "Chaotic Good",
+            "Lawful Neutral",
+            "True Neutral",
+            "Chaotic Neutral",
+            "Lawful Evil",
+            "Neutral Evil",
+            "Chaotic Evil"
+    };
+    private static final String[] PERSONALITY_TRAIT_OPTIONS = {
+            "I am always polite and respectful",
+            "I trust my friends and protect them",
+            "I am used to seeking profit in any situation",
+            "I speak plainly, even when it is unpleasant",
+            "I stay calm in the face of danger",
+            "I love beautiful stories and glorious deeds",
+            "I find it hard to trust strangers",
+            "I am always seeking new knowledge"
+    };
+    private static final String[] IDEAL_OPTIONS = {
+            "Good",
+            "Freedom",
+            "Justice",
+            "Honor",
+            "Knowledge",
+            "Power",
+            "Tradition",
+            "Redemption"
+    };
+    private static final String[] BOND_OPTIONS = {
+            "I protect my family",
+            "I serve my people",
+            "I owe my life to an old friend",
+            "I seek a lost relic",
+            "I must avenge the past",
+            "I keep my mentor's secret",
+            "I want to restore my lost honor",
+            "I am bound by oath to an order"
+    };
+    private static final String[] FLAW_OPTIONS = {
+            "I am too trusting",
+            "I am greedy for gold",
+            "I am hot-tempered",
+            "I fear losing control",
+            "I often underestimate danger",
+            "I envy the fame of others",
+            "I have trouble admitting mistakes",
+            "I easily give in to temptation"
+    };
     private static final String[] LANGUAGE_OPTIONS = {
-            "Абиссал",
-            "Друидский",
-            "Гигантский",
-            "Инфернальный",
-            "Язык воров (ксант)",
-            "Небесный",
-            "Подземный",
-            "Первичный",
-            "Общий",
-            "Орочий",
-            "Эльфийский",
-            "Гномий",
-            "Гоблинский",
-            "Полуэльфийский",
-            "Полуросликовый",
-            "Сильванский",
-            "Тифлингский",
-            "Подводный"
+            "Abyssal",
+            "Druidic",
+            "Giant",
+            "Infernal",
+            "Thieves' Cant",
+            "Celestial",
+            "Undercommon",
+            "Primordial",
+            "Common",
+            "Orc",
+            "Elvish",
+            "Gnomish",
+            "Goblin",
+            "Half-Elvish",
+            "Halfling",
+            "Sylvan",
+            "Tiefling",
+            "Aquan"
     };
     private static final String[][] SAVING_THROW_GROUPS = {
-            {"Сила", "Спасбросок (Сила)\nАтлетика"},
-            {"Ловкость", "Спасбросок (Ловкость)\nАкробатика\nЛовкость рук\nСкрытность"},
-            {"Телосложение", "Спасбросок (Телосложение)"},
-            {"Интеллект", "Спасбросок (Интеллект)\nМагия\nИстория\nРасследование\nПрирода\nРелигия"},
-            {"Мудрость", "Спасбросок (Мудрость)\nДрессировка Животных\nПроницательность\nМедицина\nВнимательность\nВыживание"},
-            {"Харизма", "Спасбросок (Харизма)\nОбман\nЗапугивание\nВыступление\nУбеждение"}
+            {"Strength", "Saving Throw (Strength)\nAthletics"},
+            {"Dexterity", "Saving Throw (Dexterity)\nAcrobatics\nSleight of Hand\nStealth"},
+            {"Constitution", "Saving Throw (Constitution)"},
+            {"Intelligence", "Saving Throw (Intelligence)\nArcana\nHistory\nInvestigation\nNature\nReligion"},
+            {"Wisdom", "Saving Throw (Wisdom)\nAnimal Handling\nInsight\nMedicine\nPerception\nSurvival"},
+            {"Charisma", "Saving Throw (Charisma)\nDeception\nIntimidation\nPerformance\nPersuasion"}
     };
     private static final String[] SAVING_THROW_OPTIONS = {
-            "Спасбросок (Сила)",
-            "Атлетика",
-            "Спасбросок (Ловкость)",
-            "Акробатика",
-            "Ловкость рук",
-            "Скрытность",
-            "Спасбросок (Телосложение)",
-            "Спасбросок (Интеллект)",
-            "Магия",
-            "История",
-            "Расследование",
-            "Природа",
-            "Религия",
-            "Спасбросок (Мудрость)",
-            "Дрессировка Животных",
-            "Проницательность",
-            "Медицина",
-            "Внимательность",
-            "Выживание",
-            "Спасбросок (Харизма)",
-            "Обман",
-            "Запугивание",
-            "Выступление",
-            "Убеждение"
+            "Saving Throw (Strength)",
+            "Athletics",
+            "Saving Throw (Dexterity)",
+            "Acrobatics",
+            "Sleight of Hand",
+            "Stealth",
+            "Saving Throw (Constitution)",
+            "Saving Throw (Intelligence)",
+            "Arcana",
+            "History",
+            "Investigation",
+            "Nature",
+            "Religion",
+            "Saving Throw (Wisdom)",
+            "Animal Handling",
+            "Insight",
+            "Medicine",
+            "Perception",
+            "Survival",
+            "Saving Throw (Charisma)",
+            "Deception",
+            "Intimidation",
+            "Performance",
+            "Persuasion"
 
     };
 
@@ -189,18 +268,18 @@ public class MainActivity extends AppCompatActivity {
         screen.setBackgroundResource(R.drawable.dnd_panel_bg);
         scrollView.addView(screen);
 
-        TextView title = title("Выбор персонажа");
+        TextView title = title("Character Selection");
         screen.addView(title);
 
-        TextView counter = bodyText("Персонажей: " + characters.size() + " / " + MAX_CHARACTERS);
+        TextView counter = bodyText("Characters: " + characters.size() + " / " + MAX_CHARACTERS);
         counter.setPadding(0, dp(4), 0, dp(16));
         screen.addView(counter);
 
-        Button createButton = primaryButton("Создать нового персонажа");
+        Button createButton = primaryButton("Create New Character");
         createButton.setEnabled(characters.size() < MAX_CHARACTERS);
         createButton.setOnClickListener(view -> {
             if (characters.size() >= MAX_CHARACTERS) {
-                Toast.makeText(this, "Можно создать максимум 15 персонажей", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "You can create a maximum of 15 characters", Toast.LENGTH_SHORT).show();
             } else {
                 showCreateCharacter();
             }
@@ -208,7 +287,7 @@ public class MainActivity extends AppCompatActivity {
         screen.addView(createButton);
 
         if (characters.isEmpty()) {
-            TextView empty = bodyText("Пока нет персонажей. Создайте первого героя для кампании.");
+            TextView empty = bodyText("There are no characters yet. Create your first hero for the campaign.");
             empty.setGravity(Gravity.CENTER);
             empty.setPadding(0, dp(40), 0, 0);
             screen.addView(empty);
@@ -232,129 +311,250 @@ public class MainActivity extends AppCompatActivity {
         screen.setBackgroundResource(R.drawable.dnd_panel_bg);
         scrollView.addView(screen);
 
-        screen.addView(title("Новый персонаж"));
+        screen.addView(title("New Character"));
 
-        TextInputEditText nameInput = textInput(screen, "Имя персонажа", "Элара");
-        TextView selectedClass = bodyText("Класс не выбран");
+        TextInputEditText nameInput = textInput(screen, "Character Name", "");
+        TextView selectedClass = bodyText("No class selected");
         selectedClass.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         selectedClass.setPadding(0, dp(4), 0, dp(4));
-        Button classButton = secondaryButton("Добавить класс");
+        Button classButton = secondaryButton("Add Class");
         final String[] classValue = {""};
         classButton.setOnClickListener(view -> new AlertDialog.Builder(this)
-                .setTitle("Выберите класс")
+                .setTitle("Choose a Class")
                 .setItems(CHARACTER_CLASSES, (dialog, which) -> {
                     classValue[0] = CHARACTER_CLASSES[which];
-                    selectedClass.setText("Класс: " + classValue[0]);
+                    selectedClass.setText("Class: " + classValue[0]);
                 })
                 .show());
         screen.addView(selectedClass);
         screen.addView(classButton);
-        TextInputEditText level = numberInput(screen, "Уровень", 1);
-        TextInputEditText race = textInput(screen, "Раса", "Человек");
-        TextInputEditText background = textInput(screen, "Предыстория", "Солдат");
-        TextInputEditText alignment = textInput(screen, "Мировоззрение", "Нейтральное");
-        TextView selectedLanguagesLabel = bodyText("Языки не выбраны");
+
+        TextView levelLabel = bodyText("Level");
+        levelLabel.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        levelLabel.setPadding(0, dp(4), 0, dp(4));
+        screen.addView(levelLabel);
+        TextInputEditText level = numberInput(screen, "Level", 1);
+        TextView selectedRace = bodyText("No race selected");
+        selectedRace.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        selectedRace.setPadding(0, dp(4), 0, dp(4));
+        Button raceButton = secondaryButton("Choose Race");
+        final String[] raceValue = {""};
+        raceButton.setOnClickListener(view -> new AlertDialog.Builder(this)
+                .setTitle("Choose a Race")
+                .setItems(RACE_OPTIONS, (dialog, which) -> {
+                    raceValue[0] = RACE_OPTIONS[which];
+                    selectedRace.setText("Race: " + raceValue[0]);
+                })
+                .show());
+        screen.addView(selectedRace);
+        screen.addView(raceButton);
+
+        TextView selectedBackground = bodyText("No background selected");
+        selectedBackground.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        selectedBackground.setPadding(0, dp(4), 0, dp(4));
+        Button backgroundButton = secondaryButton("Choose Background");
+        final String[] backgroundValue = {""};
+        backgroundButton.setOnClickListener(view -> new AlertDialog.Builder(this)
+                .setTitle("Choose a Background")
+                .setItems(BACKGROUND_OPTIONS, (dialog, which) -> {
+                    backgroundValue[0] = BACKGROUND_OPTIONS[which];
+                    selectedBackground.setText("Background: " + backgroundValue[0]);
+                })
+                .show());
+        screen.addView(selectedBackground);
+        screen.addView(backgroundButton);
+
+        TextView selectedAlignment = bodyText("No alignment selected");
+        selectedAlignment.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        selectedAlignment.setPadding(0, dp(4), 0, dp(4));
+        Button alignmentButton = secondaryButton("Choose Alignment");
+        final String[] alignmentValue = {""};
+        alignmentButton.setOnClickListener(view -> new AlertDialog.Builder(this)
+                .setTitle("Choose an Alignment")
+                .setItems(ALIGNMENT_OPTIONS, (dialog, which) -> {
+                    alignmentValue[0] = ALIGNMENT_OPTIONS[which];
+                    selectedAlignment.setText("Alignment: " + alignmentValue[0]);
+                })
+                .show());
+        screen.addView(selectedAlignment);
+        screen.addView(alignmentButton);
+
+        TextView selectedPersonalityTraits = bodyText("No personality traits selected");
+        selectedPersonalityTraits.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        selectedPersonalityTraits.setPadding(0, dp(4), 0, dp(4));
+        Button personalityTraitsButton = secondaryButton("Choose Personality Traits");
+        final String[] personalityTraitsValue = {""};
+        personalityTraitsButton.setOnClickListener(view -> new AlertDialog.Builder(this)
+                .setTitle("Choose Personality Traits")
+                .setItems(PERSONALITY_TRAIT_OPTIONS, (dialog, which) -> {
+                    personalityTraitsValue[0] = PERSONALITY_TRAIT_OPTIONS[which];
+                    selectedPersonalityTraits.setText("Personality Traits: " + personalityTraitsValue[0]);
+                })
+                .show());
+        screen.addView(selectedPersonalityTraits);
+        screen.addView(personalityTraitsButton);
+
+        TextView selectedIdeals = bodyText("No ideals selected");
+        selectedIdeals.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        selectedIdeals.setPadding(0, dp(4), 0, dp(4));
+        Button idealsButton = secondaryButton("Choose Ideals");
+        final String[] idealsValue = {""};
+        idealsButton.setOnClickListener(view -> new AlertDialog.Builder(this)
+                .setTitle("Choose Ideals")
+                .setItems(IDEAL_OPTIONS, (dialog, which) -> {
+                    idealsValue[0] = IDEAL_OPTIONS[which];
+                    selectedIdeals.setText("Ideals: " + idealsValue[0]);
+                })
+                .show());
+        screen.addView(selectedIdeals);
+        screen.addView(idealsButton);
+
+        TextView selectedBonds = bodyText("No bonds selected");
+        selectedBonds.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        selectedBonds.setPadding(0, dp(4), 0, dp(4));
+        Button bondsButton = secondaryButton("Choose Bonds");
+        final String[] bondsValue = {""};
+        bondsButton.setOnClickListener(view -> new AlertDialog.Builder(this)
+                .setTitle("Choose Bonds")
+                .setItems(BOND_OPTIONS, (dialog, which) -> {
+                    bondsValue[0] = BOND_OPTIONS[which];
+                    selectedBonds.setText("Bonds: " + bondsValue[0]);
+                })
+                .show());
+        screen.addView(selectedBonds);
+        screen.addView(bondsButton);
+
+        TextView selectedFlaws = bodyText("No flaws selected");
+        selectedFlaws.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        selectedFlaws.setPadding(0, dp(4), 0, dp(4));
+        Button flawsButton = secondaryButton("Choose Flaws");
+        final String[] flawsValue = {""};
+        flawsButton.setOnClickListener(view -> new AlertDialog.Builder(this)
+                .setTitle("Choose Flaws")
+                .setItems(FLAW_OPTIONS, (dialog, which) -> {
+                    flawsValue[0] = FLAW_OPTIONS[which];
+                    selectedFlaws.setText("Flaws: " + flawsValue[0]);
+                })
+                .show());
+        screen.addView(selectedFlaws);
+        screen.addView(flawsButton);
+        TextView selectedLanguagesLabel = bodyText("No languages selected");
         selectedLanguagesLabel.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         selectedLanguagesLabel.setPadding(0, dp(4), 0, dp(4));
-        Button languagesButton = secondaryButton("Выбрать языки");
+        Button languagesButton = secondaryButton("Choose Languages");
         final boolean[] languageSelections = new boolean[LANGUAGE_OPTIONS.length];
         languagesButton.setOnClickListener(view -> {
             boolean[] dialogSelections = languageSelections.clone();
             new AlertDialog.Builder(this)
-                    .setTitle("Выберите языки")
+                    .setTitle("Choose Languages")
                     .setMultiChoiceItems(LANGUAGE_OPTIONS, dialogSelections, (dialog, which, isChecked) ->
                             dialogSelections[which] = isChecked)
-                    .setPositiveButton("Готово", (dialog, which) -> {
+                    .setPositiveButton("Done", (dialog, which) -> {
                         System.arraycopy(dialogSelections, 0, languageSelections, 0, languageSelections.length);
-                        selectedLanguagesLabel.setText("Языки: " + languagesSummary(languageSelections));
+                        selectedLanguagesLabel.setText("Languages: " + languagesSummary(languageSelections));
                     })
-                    .setNegativeButton("Отмена", null)
+                    .setNegativeButton("Cancel", null)
                     .show();
         });
         screen.addView(selectedLanguagesLabel);
         screen.addView(languagesButton);
-        TextView selectedSavingThrowsLabel = bodyText("Спасброски не выбраны");
+        TextView selectedSavingThrowsLabel = bodyText("No saving throws selected");
         selectedSavingThrowsLabel.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         selectedSavingThrowsLabel.setPadding(0, dp(4), 0, dp(4));
-        Button savingThrowsButton = secondaryButton("Выбрать спасброски");
+        Button savingThrowsButton = secondaryButton("Choose Saving Throws");
         final boolean[] savingThrowSelections = new boolean[SAVING_THROW_OPTIONS.length];
         savingThrowsButton.setOnClickListener(view -> {
             boolean[] dialogSelections = savingThrowSelections.clone();
             new AlertDialog.Builder(this)
-                    .setTitle("Выберите спасброски")
+                    .setTitle("Choose Saving Throws")
                     .setMultiChoiceItems(SAVING_THROW_OPTIONS, dialogSelections, (dialog, which, isChecked) ->
                             dialogSelections[which] = isChecked)
-                    .setPositiveButton("Готово", (dialog, which) -> {
+                    .setPositiveButton("Done", (dialog, which) -> {
                         System.arraycopy(dialogSelections, 0, savingThrowSelections, 0, savingThrowSelections.length);
-                        selectedSavingThrowsLabel.setText("Спасброски: " + savingThrowsSummary(savingThrowSelections));
+                        selectedSavingThrowsLabel.setText("Saving Throws: " + savingThrowsSummary(savingThrowSelections));
                     })
-                    .setNegativeButton("Отмена", null)
+                    .setNegativeButton("Cancel", null)
                     .show();
         });
         screen.addView(selectedSavingThrowsLabel);
         screen.addView(savingThrowsButton);
+
+        TextView abilitiesLabel = bodyText("Ability Scores");
+        abilitiesLabel.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        abilitiesLabel.setPadding(0, dp(4), 0, dp(4));
+        screen.addView(abilitiesLabel);
+
+        final int[] abilityValues = new int[6];
+        final int[] remainingAbilityPoints = {TOTAL_ABILITY_POINTS};
+        final int[] perceptionValue = {10};
+        TextView remainingAbilityPointsLabel = bodyText("Free Points: " + remainingAbilityPoints[0]);
+        remainingAbilityPointsLabel.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        remainingAbilityPointsLabel.setPadding(0, dp(4), 0, dp(12));
+
+        GridLayout abilityGrid = new GridLayout(this);
+        abilityGrid.setColumnCount(2);
+        abilityGrid.setUseDefaultMargins(true);
+        screen.addView(abilityGrid);
+
+        addAbilityControl(abilityGrid, "Strength", abilityValues, 0, remainingAbilityPoints, remainingAbilityPointsLabel);
+        addAbilityControl(abilityGrid, "Dexterity", abilityValues, 1, remainingAbilityPoints, remainingAbilityPointsLabel);
+        addAbilityControl(abilityGrid, "Constitution", abilityValues, 2, remainingAbilityPoints, remainingAbilityPointsLabel);
+        addAbilityControl(abilityGrid, "Intelligence", abilityValues, 3, remainingAbilityPoints, remainingAbilityPointsLabel);
+        addAbilityControl(abilityGrid, "Charisma", abilityValues, 4, remainingAbilityPoints, remainingAbilityPointsLabel);
+        addAbilityControl(abilityGrid, "Wisdom", abilityValues, 5, remainingAbilityPoints, remainingAbilityPointsLabel);
+        addCounterControl(abilityGrid, "Perception", perceptionValue, 0);
+        screen.addView(remainingAbilityPointsLabel);
 
         GridLayout statGrid = new GridLayout(this);
         statGrid.setColumnCount(2);
         statGrid.setUseDefaultMargins(true);
         screen.addView(statGrid);
 
-        TextInputEditText strength = numberInput(statGrid, "Сила", 10);
-        TextInputEditText dexterity = numberInput(statGrid, "Ловкость", 10);
-        TextInputEditText constitution = numberInput(statGrid, "Телосложение", 10);
-        TextInputEditText intelligence = numberInput(statGrid, "Интеллект", 10);
-        TextInputEditText charisma = numberInput(statGrid, "Харизма", 10);
-        TextInputEditText wisdom = numberInput(statGrid, "Мудрость", 10);
-        TextInputEditText speed = numberInput(statGrid, "Скорость", 30);
-        TextInputEditText armorClass = numberInput(statGrid, "Класс брони", 10);
-        TextInputEditText currentHp = numberInput(statGrid, "Текущие ХП", 10);
-        TextInputEditText maxHp = numberInput(statGrid, "Максимум ХП", 10);
-        TextInputEditText temporaryHp = numberInput(statGrid, "Временные ХП", 0);
-        TextInputEditText proficiencyBonus = numberInput(statGrid, "Бонус мастерства", 2);
-        TextInputEditText perception = numberInput(statGrid, "Восприятие", 10);
-        TextInputEditText initiative = numberInput(statGrid, "Инициатива", 0);
+        TextInputEditText speed = numberInput(statGrid, "Speed", 30);
+        TextInputEditText armorClass = numberInput(statGrid, "Armor Class", 10);
+        TextInputEditText currentHp = numberInput(statGrid, "Current HP", 10);
+        TextInputEditText maxHp = numberInput(statGrid, "Max HP", 10);
+        TextInputEditText temporaryHp = numberInput(statGrid, "Temporary HP", 0);
+        TextInputEditText proficiencyBonus = numberInput(statGrid, "Proficiency Bonus", 2);
+        TextInputEditText initiative = numberInput(statGrid, "Initiative", 0);
 
-        TextInputEditText hitDice = textInput(screen, "Кубик хитов", "d8");
-        TextInputEditText featuresAndTraits = multilineTextInput(screen, "Особенности и черты", "");
-        TextInputEditText personalityTraits = multilineTextInput(screen, "Черты характера", "");
-        TextInputEditText ideals = multilineTextInput(screen, "Идеалы", "");
-        TextInputEditText bonds = multilineTextInput(screen, "Узы", "");
-        TextInputEditText flaws = multilineTextInput(screen, "Недостатки", "");
+        TextInputEditText hitDice = textInput(screen, "Hit Die", "d8");
+        TextInputEditText featuresAndTraits = multilineTextInput(screen, "Features and Traits", "");
 
-        Button saveButton = primaryButton("Сохранить персонажа");
+        Button saveButton = primaryButton("Save Character");
         saveButton.setOnClickListener(view -> {
             String name = value(nameInput).trim();
             if (name.isEmpty()) {
-                Toast.makeText(this, "Введите имя персонажа", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Enter Character Name", Toast.LENGTH_SHORT).show();
                 return;
             }
 
             DndCharacter character = new DndCharacter(
                     name,
-                    classValue[0].isEmpty() ? "Без класса" : classValue[0],
+                    classValue[0].isEmpty() ? "No Class" : classValue[0],
                     intValue(level, 1),
-                    intValue(strength, 10),
-                    intValue(dexterity, 10),
-                    intValue(constitution, 10),
-                    intValue(intelligence, 10),
-                    intValue(charisma, 10),
-                    intValue(wisdom, 10),
+                    abilityValues[0],
+                    abilityValues[1],
+                    abilityValues[2],
+                    abilityValues[3],
+                    abilityValues[4],
+                    abilityValues[5],
                     intValue(speed, 30),
                     intValue(armorClass, 10),
-                    valueOrDefault(race, "Не указана"),
-                    valueOrDefault(background, "Не указана"),
-                    valueOrDefault(alignment, "Не указано"),
+                    raceValue[0].isEmpty() ? "Not specified" : raceValue[0],
+                    backgroundValue[0].isEmpty() ? "Not specified" : backgroundValue[0],
+                    alignmentValue[0].isEmpty() ? "Not specified" : alignmentValue[0],
                     intValue(currentHp, 10),
                     intValue(maxHp, 10),
                     intValue(temporaryHp, 0),
                     valueOrDefault(hitDice, "d8"),
                     intValue(proficiencyBonus, 2),
-                    intValue(perception, 10),
-                    valueOrDefault(featuresAndTraits, "Нет"),
-                    valueOrDefault(personalityTraits, "Нет"),
-                    valueOrDefault(ideals, "Нет"),
-                    valueOrDefault(bonds, "Нет"),
-                    valueOrDefault(flaws, "Нет"),
+                    perceptionValue[0],
+                    valueOrDefault(featuresAndTraits, "None"),
+                    personalityTraitsValue[0].isEmpty() ? "None" : personalityTraitsValue[0],
+                    idealsValue[0].isEmpty() ? "None" : idealsValue[0],
+                    bondsValue[0].isEmpty() ? "None" : bondsValue[0],
+                    flawsValue[0].isEmpty() ? "None" : flawsValue[0],
                     intValue(initiative, 0),
                     collectSelectedLanguages(languageSelections),
                     collectSelectedSavingThrows(savingThrowSelections)
@@ -367,7 +567,7 @@ public class MainActivity extends AppCompatActivity {
         });
         screen.addView(saveButton);
 
-        Button backButton = secondaryButton("Назад к выбору");
+        Button backButton = secondaryButton("Back to Selection");
         backButton.setOnClickListener(view -> showCharacterSelect());
         screen.addView(backButton);
 
@@ -407,7 +607,7 @@ public class MainActivity extends AppCompatActivity {
                 dp(72)
         ));
 
-        Button selectOther = secondaryButton("Сменить персонажа");
+        Button selectOther = secondaryButton("Change Character");
         selectOther.setOnClickListener(view -> showCharacterSelect());
         screen.addView(selectOther, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -442,8 +642,8 @@ public class MainActivity extends AppCompatActivity {
             addBackpackHeader(body);
             addBackpackLayout(body, content);
         } else {
-            body.addView(sectionTitle("Книга заклинаний"));
-            Button addSpell = primaryButton("Добавить заклинание");
+            body.addView(sectionTitle("Spellbook"));
+            Button addSpell = primaryButton("Add Spell");
             body.addView(bodyText("Spell uses"));
             addSpellUseCells(body);
             LinearLayout restButtons = new LinearLayout(this);
@@ -468,7 +668,7 @@ public class MainActivity extends AppCompatActivity {
         header.setOrientation(LinearLayout.HORIZONTAL);
         header.setGravity(Gravity.CENTER_VERTICAL);
 
-        TextView title = sectionTitle("В рюкзаке");
+        TextView title = sectionTitle("In Backpack");
         header.addView(title, new LinearLayout.LayoutParams(
                 0,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -539,8 +739,8 @@ public class MainActivity extends AppCompatActivity {
         actions.setOrientation(LinearLayout.HORIZONTAL);
         actions.setGravity(Gravity.CENTER);
 
-        View subtract = moneyActionButton(R.drawable.coin_action_subtract, "Отнять");
-        View add = moneyActionButton(R.drawable.coin_action_add, "Добавить");
+        View subtract = moneyActionButton(R.drawable.coin_action_subtract, "Subtract");
+        View add = moneyActionButton(R.drawable.coin_action_add, "Add");
         LinearLayout.LayoutParams subtractParams = new LinearLayout.LayoutParams(dp(66), dp(44));
         subtractParams.setMargins(0, 0, dp(8), 0);
         actions.addView(subtract, subtractParams);
@@ -550,7 +750,7 @@ public class MainActivity extends AppCompatActivity {
         dialogBody.addView(actions);
 
         AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle("Деньги")
+                .setTitle("Money")
                 .setView(dialogBody)
                 .create();
         subtract.setOnClickListener(view -> applyMoneyChange(dialog, platinumInput, goldInput, silverInput, copperInput, -1));
@@ -575,7 +775,7 @@ public class MainActivity extends AppCompatActivity {
         long currentTotal = selectedCharacter.moneyAsCopper();
         long updatedTotal = currentTotal + delta;
         if (updatedTotal < 0) {
-            Toast toast = Toast.makeText(this, "Не хватает денег", Toast.LENGTH_SHORT);
+            Toast toast = Toast.makeText(this, "Not enough money", Toast.LENGTH_SHORT);
             toast.setGravity(Gravity.CENTER, 0, 0);
             toast.show();
             return;
@@ -705,7 +905,7 @@ public class MainActivity extends AppCompatActivity {
                 slot.setContentDescription(INVENTORY_CATEGORIES[selectedInventoryCategory] + " " + (slotIndex + 1));
                 slot.setOnClickListener(view -> Toast.makeText(
                         this,
-                        INVENTORY_CATEGORIES[selectedInventoryCategory] + ": пустая ячейка",
+                        INVENTORY_CATEGORIES[selectedInventoryCategory] + ": empty cell",
                         Toast.LENGTH_SHORT
                 ).show());
 
@@ -792,12 +992,12 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout textBox = verticalLayout(2);
         textBox.setPadding(dp(14), 0, 0, 0);
         TextView name = sectionTitle(character.name);
-        TextView details = bodyText(character.characterClass + " | Уровень " + character.level);
+        TextView details = bodyText(character.characterClass + " | Level " + character.level);
         textBox.addView(name);
         textBox.addView(details);
         row.addView(textBox, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
-        Button deleteButton = secondaryButton("Удалить");
+        Button deleteButton = secondaryButton("Delete");
         deleteButton.setOnClickListener(view -> confirmDeleteCharacter(character));
         row.addView(deleteButton, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -821,14 +1021,14 @@ public class MainActivity extends AppCompatActivity {
 
     private void confirmDeleteCharacter(DndCharacter character) {
         new AlertDialog.Builder(this)
-                .setTitle("Удалить персонажа?")
-                .setMessage(character.name + " будет удалён из списка.")
-                .setPositiveButton("Удалить", (dialog, which) -> {
+                .setTitle("Delete character?")
+                .setMessage(character.name + " will be removed from the list.")
+                .setPositiveButton("Delete", (dialog, which) -> {
                     characters.remove(character);
                     saveCharacters();
                     showCharacterSelect();
                 })
-                .setNegativeButton("Отмена", null)
+                .setNegativeButton("Cancel", null)
                 .show();
     }
 
@@ -852,22 +1052,22 @@ public class MainActivity extends AppCompatActivity {
                 FrameLayout.LayoutParams.MATCH_PARENT
         ));
 
-        addEquipmentSlot(equipment, "Шлем", 560, 94, 168, 162);
-        addEquipmentSlot(equipment, "Наплечник левый", 210, 406, 184, 168);
-        addEquipmentSlot(equipment, "Наплечник правый", 900, 401, 182, 167);
-        addEquipmentSlot(equipment, "Серьга 1", 384, 167, 126, 130);
-        addEquipmentSlot(equipment, "Серьга 2", 772, 160, 128, 130);
-        addEquipmentSlot(equipment, "Кулон", 577, 316, 130, 116);
-        addEquipmentSlot(equipment, "Перчатка левая", 214, 704, 185, 175);
-        addEquipmentSlot(equipment, "Перчатка правая", 897, 694, 183, 174);
-        addEquipmentSlot(equipment, "Нагрудник", 540, 482, 195, 212);
-        addEquipmentSlot(equipment, "Пояс", 555, 892, 155, 116);
-        addEquipmentSlot(equipment, "Первичное оружие", 121, 1099, 161, 470);
-        addEquipmentSlot(equipment, "Вторичное оружие", 1000, 1102, 161, 477);
-        addEquipmentSlot(equipment, "Кольцо 1", 309, 973, 93, 100);
-        addEquipmentSlot(equipment, "Кольцо 2", 867, 962, 96, 100);
-        addEquipmentSlot(equipment, "Штаны", 544, 1137, 195, 228);
-        addEquipmentSlot(equipment, "Ботинки", 543, 1467, 201, 188);
+        addEquipmentSlot(equipment, "Helmet", 560, 94, 168, 162);
+        addEquipmentSlot(equipment, "Left Pauldron", 210, 406, 184, 168);
+        addEquipmentSlot(equipment, "Right Pauldron", 900, 401, 182, 167);
+        addEquipmentSlot(equipment, "Earring 1", 384, 167, 126, 130);
+        addEquipmentSlot(equipment, "Earring 2", 772, 160, 128, 130);
+        addEquipmentSlot(equipment, "Pendant", 577, 316, 130, 116);
+        addEquipmentSlot(equipment, "Left Glove", 214, 704, 185, 175);
+        addEquipmentSlot(equipment, "Right Glove", 897, 694, 183, 174);
+        addEquipmentSlot(equipment, "Chestpiece", 540, 482, 195, 212);
+        addEquipmentSlot(equipment, "Belt", 555, 892, 155, 116);
+        addEquipmentSlot(equipment, "Primary Weapon", 121, 1099, 161, 470);
+        addEquipmentSlot(equipment, "Secondary Weapon", 1000, 1102, 161, 477);
+        addEquipmentSlot(equipment, "Ring 1", 309, 973, 93, 100);
+        addEquipmentSlot(equipment, "Ring 2", 867, 962, 96, 100);
+        addEquipmentSlot(equipment, "Pants", 544, 1137, 195, 228);
+        addEquipmentSlot(equipment, "Boots", 543, 1467, 201, 188);
 
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -881,7 +1081,7 @@ public class MainActivity extends AppCompatActivity {
         View slotView = new View(this);
         slotView.setBackgroundColor(0x66D0D0D0);
         slotView.setContentDescription(slot);
-        slotView.setOnClickListener(view -> Toast.makeText(this, slot + ": пусто", Toast.LENGTH_SHORT).show());
+        slotView.setOnClickListener(view -> Toast.makeText(this, slot + ": empty", Toast.LENGTH_SHORT).show());
 
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(1, 1);
         equipment.addView(slotView, params);
@@ -899,31 +1099,31 @@ public class MainActivity extends AppCompatActivity {
 
     private int classImageResource(String characterClass) {
         switch (characterClass) {
-            case "Бард":
+            case "Bard":
                 return R.drawable.class_bard;
-            case "Варвар":
+            case "Barbarian":
                 return R.drawable.class_barbarian;
-            case "Воин":
+            case "Fighter":
                 return R.drawable.class_warrior;
-            case "Волшебник":
+            case "Wizard":
                 return R.drawable.class_wizard;
-            case "Друид":
+            case "Druid":
                 return R.drawable.class_druid;
-            case "Жрец":
+            case "Cleric":
                 return R.drawable.class_cleric;
-            case "Изобретатель":
+            case "Artificer":
                 return R.drawable.class_artificer;
-            case "Колдун":
+            case "Warlock":
                 return R.drawable.class_warlock;
-            case "Монах":
+            case "Monk":
                 return R.drawable.class_monk;
-            case "Паладин":
+            case "Paladin":
                 return R.drawable.class_paladin;
-            case "Плут":
+            case "Rogue":
                 return R.drawable.class_rogue;
-            case "Следопыт":
+            case "Ranger":
                 return R.drawable.class_ranger;
-            case "Чародей":
+            case "Sorcerer":
                 return R.drawable.class_sorcerer;
             default:
                 return R.drawable.avatar_1;
@@ -994,7 +1194,7 @@ public class MainActivity extends AppCompatActivity {
         header.setOrientation(LinearLayout.HORIZONTAL);
         header.setGravity(Gravity.CENTER_VERTICAL);
 
-        TextView title = sectionTitle("Уровень " + spellLevel);
+        TextView title = sectionTitle("Level " + spellLevel);
         header.addView(title, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
         Button addButton = secondaryButton("+");
@@ -1005,7 +1205,7 @@ public class MainActivity extends AppCompatActivity {
 
         List<String> spells = selectedCharacter.spellbook.get(spellLevel);
         if (spells.isEmpty()) {
-            frame.addView(bodyText("Список пуст."));
+            frame.addView(bodyText("The list is empty."));
         } else {
             for (String spell : spells) {
                 TextView spellView = bodyText("- " + displaySpellName(spell));
@@ -1027,7 +1227,7 @@ public class MainActivity extends AppCompatActivity {
     private void showAddSpellDialog(int presetLevel) {
         List<SpellDefinition> availableSpells = availableSpellsFor(presetLevel);
         if (availableSpells.isEmpty()) {
-            Toast.makeText(this, "Нет доступных заклинаний для добавления", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "No available spells to add", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -1038,14 +1238,14 @@ public class MainActivity extends AppCompatActivity {
         }
 
         new AlertDialog.Builder(this)
-                .setTitle(presetLevel >= 0 ? "Доступные spell level " + presetLevel : "Доступные spell")
+                .setTitle(presetLevel >= 0 ? "Available spell level " + presetLevel : "Available spell")
                 .setItems(spellNames, (dialog, which) -> {
                     SpellDefinition spell = availableSpells.get(which);
                     selectedCharacter.spellbook.get(spell.level).add(spell.name);
                     saveCharacters();
                     showCharacterSheet();
                 })
-                .setNegativeButton("Отмена", null)
+                .setNegativeButton("Cancel", null)
                 .show();
     }
 
@@ -1060,53 +1260,53 @@ public class MainActivity extends AppCompatActivity {
                 ScrollView.LayoutParams.WRAP_CONTENT
         ));
 
-        EditText spellName = spellDialogInput(form, "1. Название заклинания", "Например: Огненный шар", false);
+        EditText spellName = spellDialogInput(form, "1. Spell Name", "For example: Fireball", false);
         EditText spellLevel = null;
         if (presetLevel < 0) {
-            spellLevel = spellDialogInput(form, "2. Уровень заклинания", "0-9", true);
+            spellLevel = spellDialogInput(form, "2. Spell Level", "0-9", true);
             spellLevel.setText("0");
         } else {
-            TextView fixedLevel = bodyText("2. Уровень заклинания: " + presetLevel);
+            TextView fixedLevel = bodyText("2. Spell Level: " + presetLevel);
             fixedLevel.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
             fixedLevel.setPadding(0, dp(8), 0, dp(8));
             form.addView(fixedLevel);
         }
 
-        EditText spellClass = spellDialogInput(form, "3. Класс персонажа", "Например: Wizard", false);
-        EditText spellRange = spellDialogInput(form, "4. Дистанция действия", "Например: 150 ft", false);
-        EditText spellAttackType = spellDialogInput(form, "5. Тип атаки", "Например: saving throw", false);
-        EditText spellDamageType = spellDialogInput(form, "6. Тип урона", "Например: Fire", false);
-        EditText spellDamage = spellDialogInput(form, "7. Формула урона", "Например: 8d6", false);
+        EditText spellClass = spellDialogInput(form, "3. Character Class", "For example: Wizard", false);
+        EditText spellRange = spellDialogInput(form, "4. Range", "For example: 150 ft", false);
+        EditText spellAttackType = spellDialogInput(form, "5. Attack Type", "For example: saving throw", false);
+        EditText spellDamageType = spellDialogInput(form, "6. Damage Type", "For example: Fire", false);
+        EditText spellDamage = spellDialogInput(form, "7. Damage Formula", "For example: 8d6", false);
 
         EditText finalSpellLevel = spellLevel;
         AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle(presetLevel >= 0 ? "Добавить в уровень " + presetLevel + " - версия 3" : "Добавить заклинание - версия 3")
+                .setTitle(presetLevel >= 0 ? "Add to level " + presetLevel + " - version 3" : "Add Spell - version 3")
                 .setView(scrollView)
-                .setPositiveButton("Добавить", null)
-                .setNegativeButton("Отмена", null)
+                .setPositiveButton("Add", null)
+                .setNegativeButton("Cancel", null)
                 .create();
 
         dialog.setOnShowListener(openDialog -> {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
                 String name = value(spellName).trim();
                 if (name.isEmpty()) {
-                    spellName.setError("Введите название");
+                    spellName.setError("Enter name");
                     return;
                 }
 
                 int level = presetLevel >= 0 ? presetLevel : intValue(finalSpellLevel, 0);
                 if (level < 0 || level > 9) {
                     if (finalSpellLevel != null) {
-                        finalSpellLevel.setError("Уровень должен быть от 0 до 9");
+                        finalSpellLevel.setError("Level must be from 0 to 9");
                     }
                     return;
                 }
 
-                String className = valueOrDefault(spellClass, "Без класса");
-                String range = valueOrDefault(spellRange, "Без дистанции");
-                String attackType = valueOrDefault(spellAttackType, "Без типа атаки");
-                String damageType = valueOrDefault(spellDamageType, "Без типа урона");
-                String damage = valueOrDefault(spellDamage, "Без урона");
+                String className = valueOrDefault(spellClass, "No Class");
+                String range = valueOrDefault(spellRange, "No Range");
+                String attackType = valueOrDefault(spellAttackType, "No Attack Type");
+                String damageType = valueOrDefault(spellDamageType, "No Damage Type");
+                String damage = valueOrDefault(spellDamage, "No Damage");
                 String spellDetails = name + " | " + className + " | " + range + " | " + attackType + " | " + damage + " " + damageType;
 
                 selectedCharacter.spellbook.get(level).add(spellDetails);
@@ -1129,26 +1329,26 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout form = verticalLayout(10);
         form.setPadding(dp(20), dp(8), dp(20), 0);
 
-        TextInputEditText spellName = textInput(form, "Название заклинания", "Огненный шар");
+        TextInputEditText spellName = textInput(form, "Spell Name", "Fireball");
         TextInputEditText spellLevel = null;
         if (presetLevel < 0) {
-            spellLevel = numberInput(form, "Уровень заклинания 0-9", 0);
+            spellLevel = numberInput(form, "Spell Level 0-9", 0);
         }
 
         TextInputEditText finalSpellLevel = spellLevel;
         new AlertDialog.Builder(this)
-                .setTitle(presetLevel >= 0 ? "Добавить в уровень " + presetLevel : "Добавить заклинание")
+                .setTitle(presetLevel >= 0 ? "Add to level " + presetLevel : "Add Spell")
                 .setView(form)
-                .setPositiveButton("Добавить", (dialog, which) -> {
+                .setPositiveButton("Add", (dialog, which) -> {
                     String name = value(spellName).trim();
                     if (name.isEmpty()) {
-                        Toast.makeText(this, "Введите название заклинания", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Enter spell name", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
                     int level = presetLevel >= 0 ? presetLevel : intValue(finalSpellLevel, 0);
                     if (level < 0 || level > 9) {
-                        Toast.makeText(this, "Уровень должен быть от 0 до 9", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Level must be from 0 to 9", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
@@ -1156,7 +1356,7 @@ public class MainActivity extends AppCompatActivity {
                     saveCharacters();
                     showCharacterSheet();
                 })
-                .setNegativeButton("Отмена", null)
+                .setNegativeButton("Cancel", null)
                 .show();
     }
 
@@ -1197,23 +1397,23 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean canLearnSpell(SpellDefinition spell) {
         String characterClass = selectedCharacter.characterClass.toLowerCase();
-        if (characterClass.contains("wizard") || characterClass.contains("волшеб")) {
+        if (characterClass.contains("wizard") || characterClass.contains("wizard")) {
             return spell.classes.contains("Wizard");
-        } else if (characterClass.contains("sorcerer") || characterClass.contains("чарод")) {
+        } else if (characterClass.contains("sorcerer") || characterClass.contains("sorcerer")) {
             return spell.classes.contains("Sorcerer");
-        } else if (characterClass.contains("warlock") || characterClass.contains("колдун")) {
+        } else if (characterClass.contains("warlock") || characterClass.contains("warlock")) {
             return spell.classes.contains("Warlock");
-        } else if (characterClass.contains("cleric") || characterClass.contains("жрец")) {
+        } else if (characterClass.contains("cleric") || characterClass.contains("cleric")) {
             return spell.classes.contains("Cleric");
-        } else if (characterClass.contains("druid") || characterClass.contains("друид")) {
+        } else if (characterClass.contains("druid") || characterClass.contains("druid")) {
             return spell.classes.contains("Druid");
-        } else if (characterClass.contains("bard") || characterClass.contains("бард")) {
+        } else if (characterClass.contains("bard") || characterClass.contains("bard")) {
             return spell.classes.contains("Bard");
-        } else if (characterClass.contains("paladin") || characterClass.contains("палад")) {
+        } else if (characterClass.contains("paladin") || characterClass.contains("paladin")) {
             return spell.classes.contains("Paladin");
-        } else if (characterClass.contains("ranger") || characterClass.contains("следоп")) {
+        } else if (characterClass.contains("ranger") || characterClass.contains("ranger")) {
             return spell.classes.contains("Ranger");
-        } else if (characterClass.contains("artificer") || characterClass.contains("изобрет")) {
+        } else if (characterClass.contains("artificer") || characterClass.contains("artificer")) {
             return spell.classes.contains("Artificer");
         }
         return true;
@@ -1239,7 +1439,7 @@ public class MainActivity extends AppCompatActivity {
     private void showSpellDetails(int spellLevel, String spellName) {
         SpellDefinition spell = findSpell(spellName);
         String description = spell == null
-                ? "Описание недоступно для старого заклинания."
+                ? "Description is unavailable for an old spell."
                 : spell.description;
         boolean cantrip = spellLevel == 0;
         String message = description + "\n\nLevel: " + spellLevel + "\nUses: "
@@ -1249,21 +1449,21 @@ public class MainActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle(spellName)
                 .setMessage(message)
-                .setPositiveButton("Применить", (dialog, which) -> castSpell(spellLevel, spellName))
-                .setNegativeButton("Закрыть", null)
+                .setPositiveButton("Apply", (dialog, which) -> castSpell(spellLevel, spellName))
+                .setNegativeButton("Close", null)
                 .show();
     }
 
     private void castSpell(int spellLevel, String spellName) {
         if (spellLevel > 0) {
             if (selectedCharacter.currentSpellUses <= 0) {
-                Toast.makeText(this, "Нет доступных spell uses. Сделайте rest.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "No spell uses available. Take a rest.", Toast.LENGTH_SHORT).show();
                 return;
             }
             selectedCharacter.currentSpellUses--;
         }
         saveCharacters();
-        Toast.makeText(this, spellName + " применен", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, spellName + " cast", Toast.LENGTH_SHORT).show();
         showCharacterSheet();
     }
 
@@ -1346,50 +1546,50 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void addIdentitySection(LinearLayout parent) {
-        LinearLayout section = sheetSection("Анкета персонажа");
+        LinearLayout section = sheetSection("Character Details");
         section.setPadding(dp(12), dp(9), dp(12), dp(10));
         String[][] fields = {
-                {"Имя персонажа", selectedCharacter.name},
-                {"Класс", selectedCharacter.characterClass},
-                {"Уровень", String.valueOf(selectedCharacter.level)},
-                {"Раса", selectedCharacter.race},
-                {"Предыстория", selectedCharacter.background},
-                {"Мировоззрение", selectedCharacter.alignment}
+                {"Character Name", selectedCharacter.name},
+                {"Class", selectedCharacter.characterClass},
+                {"Level", String.valueOf(selectedCharacter.level)},
+                {"Race", selectedCharacter.race},
+                {"Background", selectedCharacter.background},
+                {"Alignment", selectedCharacter.alignment}
         };
         addCompactIdentityGrid(section, fields, wideLayout() ? 3 : 2);
         parent.addView(section);
     }
 
     private void addCombatSection(LinearLayout parent) {
-        LinearLayout section = sheetSection("Боевые показатели");
+        LinearLayout section = sheetSection("Combat Stats");
         GridLayout combatGrid = new GridLayout(this);
         combatGrid.setColumnCount(wideLayout() ? 5 : 2);
         combatGrid.setUseDefaultMargins(false);
-        addCombatCell(combatGrid, "Класс брони", String.valueOf(selectedCharacter.armorClass), true);
-        addCombatCell(combatGrid, "Инициатива", String.valueOf(selectedCharacter.initiative), false);
-        addCombatCell(combatGrid, "Скорость", String.valueOf(selectedCharacter.speed), false);
-        addCombatCell(combatGrid, "Бонус мастерства", String.valueOf(selectedCharacter.proficiencyBonus), false);
-        addCombatCell(combatGrid, "Пассивная мудрость", String.valueOf(selectedCharacter.perception), false);
+        addCombatCell(combatGrid, "Armor Class", String.valueOf(selectedCharacter.armorClass), true);
+        addCombatCell(combatGrid, "Initiative", String.valueOf(selectedCharacter.initiative), false);
+        addCombatCell(combatGrid, "Speed", String.valueOf(selectedCharacter.speed), false);
+        addCombatCell(combatGrid, "Proficiency Bonus", String.valueOf(selectedCharacter.proficiencyBonus), false);
+        addCombatCell(combatGrid, "Passive Wisdom", String.valueOf(selectedCharacter.perception), false);
         section.addView(combatGrid);
 
         LinearLayout hp = new LinearLayout(this);
         hp.setOrientation(wideLayout() ? LinearLayout.HORIZONTAL : LinearLayout.VERTICAL);
         hp.setPadding(0, dp(8), 0, 0);
-        addHpPanel(hp, "Текущие хиты", String.valueOf(selectedCharacter.currentHp), "Максимум: " + selectedCharacter.maxHp);
-        addHpPanel(hp, "Временные хиты", String.valueOf(selectedCharacter.temporaryHp), "Защита сверх максимума");
-        addHpPanel(hp, "Кубики хитов", selectedCharacter.hitDice, "Всего: " + selectedCharacter.level);
+        addHpPanel(hp, "Current Hit Points", String.valueOf(selectedCharacter.currentHp), "Maximum: " + selectedCharacter.maxHp);
+        addHpPanel(hp, "Temporary Hit Points", String.valueOf(selectedCharacter.temporaryHp), "Protection beyond maximum");
+        addHpPanel(hp, "Hit Dice", selectedCharacter.hitDice, "Total: " + selectedCharacter.level);
         section.addView(hp);
         parent.addView(section);
     }
 
     private void addCharacterNotesSection(LinearLayout parent) {
-        LinearLayout section = sheetSection("Описание");
+        LinearLayout section = sheetSection("Description");
         String[][] notes = {
-                {"Особенности и черты", selectedCharacter.featuresAndTraits},
-                {"Черты характера", selectedCharacter.personalityTraits},
-                {"Идеалы", selectedCharacter.ideals},
-                {"Узы", selectedCharacter.bonds},
-                {"Недостатки", selectedCharacter.flaws}
+                {"Features and Traits", selectedCharacter.featuresAndTraits},
+                {"Personality Traits", selectedCharacter.personalityTraits},
+                {"Ideals", selectedCharacter.ideals},
+                {"Bonds", selectedCharacter.bonds},
+                {"Flaws", selectedCharacter.flaws}
         };
         addFieldGrid(section, notes, wideLayout() ? 2 : 1);
         parent.addView(section);
@@ -1571,20 +1771,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void addAbilitySection(LinearLayout parent, List<String> selectedSavingThrows) {
-        LinearLayout section = sheetSection("Характеристики");
+        LinearLayout section = sheetSection("Ability Scores");
 
-        addAbilityRow(section, "Сила", "STR", selectedCharacter.strength,
-                new String[]{"Спасбросок (Сила)"}, new String[]{"Атлетика"}, selectedSavingThrows);
-        addAbilityRow(section, "Ловкость", "DEX", selectedCharacter.dexterity,
-                new String[]{"Спасбросок (Ловкость)"}, new String[]{"Акробатика", "Ловкость рук", "Скрытность"}, selectedSavingThrows);
-        addAbilityRow(section, "Телосложение", "CON", selectedCharacter.constitution,
-                new String[]{"Спасбросок (Телосложение)"}, new String[]{}, selectedSavingThrows);
-        addAbilityRow(section, "Интеллект", "INT", selectedCharacter.intelligence,
-                new String[]{"Спасбросок (Интеллект)"}, new String[]{"Магия", "История", "Расследование", "Природа", "Религия"}, selectedSavingThrows);
-        addAbilityRow(section, "Мудрость", "WIS", selectedCharacter.wisdom,
-                new String[]{"Спасбросок (Мудрость)"}, new String[]{"Дрессировка Животных", "Проницательность", "Медицина", "Внимательность", "Выживание"}, selectedSavingThrows);
-        addAbilityRow(section, "Харизма", "CHA", selectedCharacter.charisma,
-                new String[]{"Спасбросок (Харизма)"}, new String[]{"Обман", "Запугивание", "Выступление", "Убеждение"}, selectedSavingThrows);
+        addAbilityRow(section, "Strength", "STR", selectedCharacter.strength,
+                new String[]{"Saving Throw (Strength)"}, new String[]{"Athletics"}, selectedSavingThrows);
+        addAbilityRow(section, "Dexterity", "DEX", selectedCharacter.dexterity,
+                new String[]{"Saving Throw (Dexterity)"}, new String[]{"Acrobatics", "Sleight of Hand", "Stealth"}, selectedSavingThrows);
+        addAbilityRow(section, "Constitution", "CON", selectedCharacter.constitution,
+                new String[]{"Saving Throw (Constitution)"}, new String[]{}, selectedSavingThrows);
+        addAbilityRow(section, "Intelligence", "INT", selectedCharacter.intelligence,
+                new String[]{"Saving Throw (Intelligence)"}, new String[]{"Arcana", "History", "Investigation", "Nature", "Religion"}, selectedSavingThrows);
+        addAbilityRow(section, "Wisdom", "WIS", selectedCharacter.wisdom,
+                new String[]{"Saving Throw (Wisdom)"}, new String[]{"Animal Handling", "Insight", "Medicine", "Perception", "Survival"}, selectedSavingThrows);
+        addAbilityRow(section, "Charisma", "CHA", selectedCharacter.charisma,
+                new String[]{"Saving Throw (Charisma)"}, new String[]{"Deception", "Intimidation", "Performance", "Persuasion"}, selectedSavingThrows);
 
         parent.addView(section);
     }
@@ -1645,7 +1845,7 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout savingBox = verticalLayout(0);
         savingBox.setPadding(dp(10), 0, dp(10), 0);
         for (String savingThrow : savingThrows) {
-            savingBox.addView(proficiencyLine("Спасбросок", selectedSavingThrows.contains(savingThrow)));
+            savingBox.addView(proficiencyLine("Saving Throw", selectedSavingThrows.contains(savingThrow)));
         }
         if (compact) {
             savingBox.setPadding(0, dp(10), 0, 0);
@@ -1708,9 +1908,9 @@ public class MainActivity extends AppCompatActivity {
         table.setPadding(dp(14), dp(12), dp(14), dp(12));
         table.setBackgroundColor(0xFFF7F2EA);
 
-        table.addView(sectionTitle("Языки"));
+        table.addView(sectionTitle("Languages"));
         if (languages.isEmpty()) {
-            TextView empty = bodyText("Не выбраны");
+            TextView empty = bodyText("Not selected");
             empty.setPadding(0, dp(8), 0, 0);
             table.addView(empty);
         } else {
@@ -1720,7 +1920,7 @@ public class MainActivity extends AppCompatActivity {
             languageGrid.setPadding(0, dp(8), 0, 0);
 
             addLanguageCell(languageGrid, "#", true, 0.25f);
-            addLanguageCell(languageGrid, "Язык", true, 1f);
+            addLanguageCell(languageGrid, "Language", true, 1f);
             for (int index = 0; index < languages.size(); index++) {
                 addLanguageCell(languageGrid, String.valueOf(index + 1), false, 0.25f);
                 addLanguageCell(languageGrid, languages.get(index), false, 1f);
@@ -1736,15 +1936,15 @@ public class MainActivity extends AppCompatActivity {
         table.setPadding(dp(14), dp(12), dp(14), dp(12));
         table.setBackgroundColor(0xFFF7F2EA);
 
-        table.addView(sectionTitle("Спасброски к характеристикам"));
+        table.addView(sectionTitle("Ability Saving Throws"));
 
         GridLayout savingThrowGrid = new GridLayout(this);
         savingThrowGrid.setColumnCount(2);
         savingThrowGrid.setUseDefaultMargins(true);
         savingThrowGrid.setPadding(0, dp(8), 0, 0);
 
-        addLanguageCell(savingThrowGrid, "Характеристика", true, 0.75f);
-        addLanguageCell(savingThrowGrid, "Список", true, 1.25f);
+        addLanguageCell(savingThrowGrid, "Ability", true, 0.75f);
+        addLanguageCell(savingThrowGrid, "List", true, 1.25f);
         for (String[] group : SAVING_THROW_GROUPS) {
             addLanguageCell(savingThrowGrid, group[0], false, 0.75f);
             addSavingThrowOptionsCell(savingThrowGrid, group[1].split("\n"), selectedSavingThrows, 1.25f);
@@ -1803,7 +2003,7 @@ public class MainActivity extends AppCompatActivity {
     private String languagesSummary(boolean[] languageSelections) {
         List<String> languages = collectSelectedLanguages(languageSelections);
         if (languages.isEmpty()) {
-            return "не выбраны";
+            return "not selected";
         }
 
         StringBuilder summary = new StringBuilder();
@@ -1829,7 +2029,7 @@ public class MainActivity extends AppCompatActivity {
     private String savingThrowsSummary(boolean[] savingThrowSelections) {
         List<String> savingThrows = collectSelectedSavingThrows(savingThrowSelections);
         if (savingThrows.isEmpty()) {
-            return "не выбраны";
+            return "not selected";
         }
 
         StringBuilder summary = new StringBuilder();
@@ -1850,6 +2050,114 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         return savingThrows;
+    }
+
+    private void addAbilityControl(
+            GridLayout parent,
+            String label,
+            int[] abilityValues,
+            int abilityIndex,
+            int[] remainingPoints,
+            TextView remainingPointsLabel
+    ) {
+        LinearLayout cell = verticalLayout(0);
+        cell.setPadding(dp(6), dp(6), dp(6), dp(6));
+
+        TextView name = bodyText(label);
+        name.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        name.setGravity(Gravity.CENTER);
+        cell.addView(name);
+
+        LinearLayout controls = new LinearLayout(this);
+        controls.setOrientation(LinearLayout.HORIZONTAL);
+        controls.setGravity(Gravity.CENTER);
+
+        Button minusButton = secondaryButton("-");
+        TextView value = bodyText(String.valueOf(abilityValues[abilityIndex]));
+        value.setTextSize(20);
+        value.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        value.setGravity(Gravity.CENTER);
+        Button plusButton = secondaryButton("+");
+
+        minusButton.setOnClickListener(view -> {
+            if (abilityValues[abilityIndex] <= 0) {
+                return;
+            }
+            abilityValues[abilityIndex]--;
+            remainingPoints[0]++;
+            value.setText(String.valueOf(abilityValues[abilityIndex]));
+            remainingPointsLabel.setText("Free Points: " + remainingPoints[0]);
+        });
+
+        plusButton.setOnClickListener(view -> {
+            if (remainingPoints[0] <= 0) {
+                return;
+            }
+            abilityValues[abilityIndex]++;
+            remainingPoints[0]--;
+            value.setText(String.valueOf(abilityValues[abilityIndex]));
+            remainingPointsLabel.setText("Free Points: " + remainingPoints[0]);
+        });
+
+        controls.addView(minusButton, new LinearLayout.LayoutParams(dp(44), dp(44)));
+        controls.addView(value, new LinearLayout.LayoutParams(dp(54), dp(44)));
+        controls.addView(plusButton, new LinearLayout.LayoutParams(dp(44), dp(44)));
+        cell.addView(controls);
+
+        GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+        params.width = 0;
+        params.height = GridLayout.LayoutParams.WRAP_CONTENT;
+        params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+        params.setMargins(0, dp(4), 0, dp(4));
+        cell.setLayoutParams(params);
+        parent.addView(cell);
+    }
+
+    private void addCounterControl(GridLayout parent, String label, int[] values, int valueIndex) {
+        LinearLayout cell = verticalLayout(0);
+        cell.setPadding(dp(6), dp(6), dp(6), dp(6));
+
+        TextView name = bodyText(label);
+        name.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        name.setGravity(Gravity.CENTER);
+        cell.addView(name);
+
+        LinearLayout controls = new LinearLayout(this);
+        controls.setOrientation(LinearLayout.HORIZONTAL);
+        controls.setGravity(Gravity.CENTER);
+
+        Button minusButton = secondaryButton("-");
+        TextView value = bodyText(String.valueOf(values[valueIndex]));
+        value.setTextSize(20);
+        value.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        value.setGravity(Gravity.CENTER);
+        Button plusButton = secondaryButton("+");
+
+        minusButton.setOnClickListener(view -> {
+            if (values[valueIndex] <= 0) {
+                return;
+            }
+            values[valueIndex]--;
+            value.setText(String.valueOf(values[valueIndex]));
+        });
+
+        plusButton.setOnClickListener(view -> {
+            values[valueIndex]++;
+            value.setText(String.valueOf(values[valueIndex]));
+        });
+
+        controls.addView(minusButton, new LinearLayout.LayoutParams(dp(44), dp(44)));
+        controls.addView(value, new LinearLayout.LayoutParams(dp(54), dp(44)));
+        controls.addView(plusButton, new LinearLayout.LayoutParams(dp(44), dp(44)));
+        cell.addView(controls);
+
+        GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+        params.width = 0;
+        params.height = GridLayout.LayoutParams.WRAP_CONTENT;
+        params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+        params.setMargins(0, dp(4), 0, dp(4));
+        cell.setLayoutParams(params);
+        parent.addView(cell);
     }
 
     private TextInputEditText textInput(LinearLayout parent, String label, String hint) {
@@ -2087,20 +2395,20 @@ public class MainActivity extends AppCompatActivity {
                     wisdom,
                     speed,
                     armorClass,
-                    "Не указана",
-                    "Не указана",
-                    "Не указано",
+                    "Not specified",
+                    "Not specified",
+                    "Not specified",
                     10,
                     10,
                     0,
                     "d8",
                     2,
                     10,
-                    "Нет",
-                    "Нет",
-                    "Нет",
-                    "Нет",
-                    "Нет",
+                    "None",
+                    "None",
+                    "None",
+                    "None",
+                    "None",
                     0,
                     new ArrayList<>(),
                     new ArrayList<>(),
@@ -2392,8 +2700,8 @@ public class MainActivity extends AppCompatActivity {
 
         static DndCharacter fromJson(@NonNull JSONObject object) {
             return new DndCharacter(
-                    object.optString("name", "Без имени"),
-                    object.optString("class", "Без класса"),
+                    object.optString("name", "No Name"),
+                    object.optString("class", "No Class"),
                     object.optInt("level", 1),
                     object.optInt("strength", 10),
                     object.optInt("dexterity", 10),
@@ -2403,20 +2711,20 @@ public class MainActivity extends AppCompatActivity {
                     object.optInt("wisdom", 10),
                     object.optInt("speed", 30),
                     object.optInt("armorClass", 10),
-                    object.optString("race", "Не указана"),
-                    object.optString("background", "Не указана"),
-                    object.optString("alignment", "Не указано"),
+                    object.optString("race", "Not specified"),
+                    object.optString("background", "Not specified"),
+                    object.optString("alignment", "Not specified"),
                     object.optInt("currentHp", 10),
                     object.optInt("maxHp", 10),
                     object.optInt("temporaryHp", 0),
                     object.optString("hitDice", "d8"),
                     object.optInt("proficiencyBonus", 2),
                     object.optInt("perception", 10),
-                    object.optString("featuresAndTraits", "Нет"),
-                    object.optString("personalityTraits", "Нет"),
-                    object.optString("ideals", "Нет"),
-                    object.optString("bonds", "Нет"),
-                    object.optString("flaws", "Нет"),
+                    object.optString("featuresAndTraits", "None"),
+                    object.optString("personalityTraits", "None"),
+                    object.optString("ideals", "None"),
+                    object.optString("bonds", "None"),
+                    object.optString("flaws", "None"),
                     object.optInt("initiative", 0),
                     readLanguages(object.optJSONArray("languages")),
                     readSavingThrows(object.optJSONArray("savingThrows")),
@@ -2468,8 +2776,8 @@ public class MainActivity extends AppCompatActivity {
             for (int index = 0; index < savedSavingThrows.length(); index++) {
                 String savingThrow = savedSavingThrows.optString(index, "").trim();
                 if (!savingThrow.isEmpty()) {
-                    if ("Телосложение".equals(savingThrow)) {
-                        savingThrow = "Спасбросок (Телосложение)";
+                    if ("Constitution".equals(savingThrow)) {
+                        savingThrow = "Saving Throw (Constitution)";
                     }
                     savingThrows.add(savingThrow);
                 }
