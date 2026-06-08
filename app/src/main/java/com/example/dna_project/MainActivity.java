@@ -1,6 +1,8 @@
 package com.example.dna_project;
 
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.InputType;
@@ -17,6 +19,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -28,6 +31,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String PREFS_NAME = "dnd_characters";
     private static final String KEY_CHARACTERS = "characters";
+    private static final String DB_NAME = "dnd_project.db";
     private static final int MAX_CHARACTERS = 15;
     private static final int TOTAL_ABILITY_POINTS = 50;
 
@@ -251,6 +259,17 @@ public class MainActivity extends AppCompatActivity {
         root = new FrameLayout(this);
         root.setBackgroundResource(R.drawable.dnd_screen_bg);
         setContentView(root);
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (selectedCharacter != null) {
+                    showCharacterSelect();
+                } else {
+                    setEnabled(false);
+                    getOnBackPressedDispatcher().onBackPressed();
+                }
+            }
+        });
         loadCharacters();
         showCharacterSelect();
     }
@@ -644,7 +663,7 @@ public class MainActivity extends AppCompatActivity {
         } else {
             body.addView(sectionTitle("Spellbook"));
             Button addSpell = primaryButton("Add Spell");
-            body.addView(bodyText("Spell uses"));
+            body.addView(bodyText(spellUsesLabel()));
             addSpellUseCells(body);
             LinearLayout restButtons = new LinearLayout(this);
             restButtons.setOrientation(LinearLayout.HORIZONTAL);
@@ -1131,30 +1150,166 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void restoreSpellUses(String restName) {
-        selectedCharacter.currentSpellUses = selectedCharacter.maxSpellUses;
-        saveCharacters();
-        Toast.makeText(this, restName + ": spell uses restored", Toast.LENGTH_SHORT).show();
+        if ("Short rest".equals(restName) && !"pact".equals(casterType())) {
+            Toast.makeText(this, "Short rest restores only pact slots", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        try (SQLiteDatabase db = openSpellDatabase()) {
+            if (db != null) {
+                db.delete("character_spell_slots", "character_id = ?", new String[]{String.valueOf(activeCharacterId())});
+            }
+        } catch (Exception ignored) {
+            selectedCharacter.currentSpellUses = selectedCharacter.maxSpellUses;
+            saveCharacters();
+        }
+        Toast.makeText(this, restName + ": spell slots restored", Toast.LENGTH_SHORT).show();
         showCharacterSheet();
     }
 
     private void addSpellUseCells(LinearLayout parent) {
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setPadding(0, dp(4), 0, dp(8));
+        LinearLayout track = new LinearLayout(this);
+        track.setOrientation(LinearLayout.HORIZONTAL);
+        track.setPadding(0, dp(4), 0, dp(8));
 
-        for (int index = 0; index < selectedCharacter.maxSpellUses; index++) {
-            TextView cell = new TextView(this);
-            cell.setText("");
-            cell.setBackgroundColor(index < selectedCharacter.currentSpellUses ? 0xFF4CAF50 : 0xFFE53935);
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, dp(18), 1f);
-            params.setMargins(dp(2), 0, dp(2), 0);
-            row.addView(cell, params);
+        int[] maximumSlots = maximumSlots();
+        int[] usedSlots = usedSlots();
+        int totalMaximum = 0;
+        int totalUsed = 0;
+        for (int level = 1; level <= 9; level++) {
+            totalMaximum += maximumSlots[level];
+            totalUsed += Math.min(usedSlots[level], maximumSlots[level]);
+        }
+        int totalRemaining = Math.max(totalMaximum - totalUsed, 0);
+
+        if (totalMaximum == 0) {
+            TextView empty = new TextView(this);
+            empty.setText("");
+            empty.setBackgroundColor(0xFFE4D7C7);
+            track.addView(empty, new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    dp(22)
+            ));
+        } else {
+            for (int index = 0; index < totalMaximum; index++) {
+                TextView cell = new TextView(this);
+                cell.setText("");
+                cell.setBackgroundColor(index < totalRemaining ? 0xFF43A047 : 0xFFE53935);
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, dp(24), 1f);
+                params.setMargins(dp(3), 0, dp(3), 0);
+                track.addView(cell, params);
+            }
         }
 
-        parent.addView(row, new LinearLayout.LayoutParams(
+        parent.addView(track, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
         ));
+    }
+
+    private String spellUsesLabel() {
+        int[] maximumSlots = maximumSlots();
+        int[] usedSlots = usedSlots();
+        int totalMaximum = 0;
+        int totalUsed = 0;
+        for (int level = 1; level <= 9; level++) {
+            totalMaximum += maximumSlots[level];
+            totalUsed += Math.min(usedSlots[level], maximumSlots[level]);
+        }
+        return "Spell uses: " + Math.max(totalMaximum - totalUsed, 0) + " / " + totalMaximum;
+    }
+
+    private int activeCharacterId() {
+        int value = (selectedCharacter.name + "|" + selectedCharacter.characterClass + "|" + selectedCharacter.level).hashCode();
+        return value == Integer.MIN_VALUE ? 1 : Math.abs(value);
+    }
+
+    private String casterType() {
+        try (SQLiteDatabase db = openSpellDatabase()) {
+            if (db == null) {
+                return "none";
+            }
+            try (Cursor cursor = db.rawQuery(
+                    "SELECT caster_type FROM class WHERE name = ? LIMIT 1",
+                    new String[]{databaseClassName()}
+            )) {
+                if (cursor.moveToFirst()) {
+                    return cursor.getString(0);
+                }
+            }
+        } catch (Exception ignored) {
+            return "none";
+        }
+        return "none";
+    }
+
+    private int[] maximumSlots() {
+        int[] slots = new int[10];
+        try (SQLiteDatabase db = openSpellDatabase()) {
+            if (db == null) {
+                return slots;
+            }
+            try (Cursor cursor = db.rawQuery(
+                    "SELECT level_1, level_2, level_3, level_4, level_5, level_6, level_7, level_8, level_9 " +
+                            "FROM spell_slots WHERE caster_type = ? AND level = ? LIMIT 1",
+                    new String[]{casterType(), String.valueOf(selectedCharacter.level)}
+            )) {
+                if (cursor.moveToFirst()) {
+                    for (int level = 1; level <= 9; level++) {
+                        slots[level] = cursor.getInt(level - 1);
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+            return slots;
+        }
+        return slots;
+    }
+
+    private int[] usedSlots() {
+        int[] slots = new int[10];
+        try (SQLiteDatabase db = openSpellDatabase()) {
+            if (db == null) {
+                return slots;
+            }
+            try (Cursor cursor = db.rawQuery(
+                    "SELECT spell_level, used_slots FROM character_spell_slots WHERE character_id = ?",
+                    new String[]{String.valueOf(activeCharacterId())}
+            )) {
+                while (cursor.moveToNext()) {
+                    int level = cursor.getInt(0);
+                    if (level >= 1 && level <= 9) {
+                        slots[level] = cursor.getInt(1);
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+            return slots;
+        }
+        return slots;
+    }
+
+    private List<String> learnedSpellsForLevel(int spellLevel) {
+        List<String> spells = new ArrayList<>();
+        try (SQLiteDatabase db = openSpellDatabase()) {
+            if (db == null) {
+                return selectedCharacter.spellbook.get(spellLevel);
+            }
+            try (Cursor cursor = db.rawQuery(
+                    "SELECT s.name FROM character_spell cs " +
+                            "JOIN spell s ON s.id = cs.spell_id " +
+                            "WHERE cs.character_id = ? AND s.level = ? " +
+                            "ORDER BY s.name",
+                    new String[]{String.valueOf(activeCharacterId()), String.valueOf(spellLevel)}
+            )) {
+                while (cursor.moveToNext()) {
+                    spells.add(cursor.getString(0));
+                }
+            }
+        } catch (Exception ignored) {
+            return selectedCharacter.spellbook.get(spellLevel);
+        }
+        return spells;
     }
 
     private int maxLearnableSpellLevel() {
@@ -1203,7 +1358,16 @@ public class MainActivity extends AppCompatActivity {
         header.addView(addButton, new LinearLayout.LayoutParams(dp(48), dp(48)));
         frame.addView(header);
 
-        List<String> spells = selectedCharacter.spellbook.get(spellLevel);
+        if (spellLevel == 0) {
+            frame.addView(bodyText("Unlimited uses"));
+        } else {
+            int maximum = maximumSlots()[spellLevel];
+            int used = Math.min(usedSlots()[spellLevel], maximum);
+            int remaining = Math.max(maximum - used, 0);
+            frame.addView(bodyText(maximum > 0 ? "Slots: " + remaining + " / " + maximum : "Unavailable"));
+        }
+
+        List<String> spells = learnedSpellsForLevel(spellLevel);
         if (spells.isEmpty()) {
             frame.addView(bodyText("The list is empty."));
         } else {
@@ -1241,8 +1405,7 @@ public class MainActivity extends AppCompatActivity {
                 .setTitle(presetLevel >= 0 ? "Available spell level " + presetLevel : "Available spell")
                 .setItems(spellNames, (dialog, which) -> {
                     SpellDefinition spell = availableSpells.get(which);
-                    selectedCharacter.spellbook.get(spell.level).add(spell.name);
-                    saveCharacters();
+                    addKnownSpell(spell);
                     showCharacterSheet();
                 })
                 .setNegativeButton("Cancel", null)
@@ -1364,7 +1527,167 @@ public class MainActivity extends AppCompatActivity {
         addStat(parent, label, String.valueOf(value));
     }
 
+    private SQLiteDatabase openSpellDatabase() {
+        File databaseFile = getDatabasePath(DB_NAME);
+        if (!databaseFile.exists()) {
+            File parent = databaseFile.getParentFile();
+            if (parent != null && !parent.exists()) {
+                parent.mkdirs();
+            }
+            try (InputStream input = getAssets().open(DB_NAME);
+                 FileOutputStream output = new FileOutputStream(databaseFile)) {
+                byte[] buffer = new byte[8192];
+                int read;
+                while ((read = input.read(buffer)) != -1) {
+                    output.write(buffer, 0, read);
+                }
+            } catch (IOException exception) {
+                return null;
+            }
+        }
+        SQLiteDatabase db = SQLiteDatabase.openDatabase(databaseFile.getPath(), null, SQLiteDatabase.OPEN_READWRITE);
+        ensureSpellBookTables(db);
+        return db;
+    }
+
+    private void ensureSpellBookTables(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS character_spell (" +
+                "character_id INTEGER NOT NULL, " +
+                "spell_id INTEGER NOT NULL, " +
+                "is_prepared INTEGER DEFAULT 1, " +
+                "source TEXT DEFAULT 'class', " +
+                "PRIMARY KEY (character_id, spell_id))");
+        db.execSQL("CREATE TABLE IF NOT EXISTS character_spell_slots (" +
+                "character_id INTEGER NOT NULL, " +
+                "spell_level INTEGER NOT NULL, " +
+                "used_slots INTEGER DEFAULT 0, " +
+                "PRIMARY KEY (character_id, spell_level))");
+    }
+
+    private List<SpellDefinition> availableSpellsFromDatabase(int presetLevel) {
+        List<SpellDefinition> result = new ArrayList<>();
+        try (SQLiteDatabase db = openSpellDatabase()) {
+            if (db == null) {
+                return result;
+            }
+
+            String className = databaseClassName();
+            String levelFilter = presetLevel >= 0 ? " AND s.level = ?" : "";
+            List<String> args = new ArrayList<>();
+            args.add(className);
+            args.add(String.valueOf(selectedCharacter.level));
+            if (presetLevel >= 0) {
+                args.add(String.valueOf(presetLevel));
+            }
+
+            String sql = "SELECT s.id, s.name, s.level, s.description " +
+                    "FROM class c " +
+                    "JOIN class_spells cs ON cs.class_id = c.id " +
+                    "JOIN spell s ON s.id = cs.spell_id " +
+                    "WHERE c.name = ? AND cs.level_req <= ?" + levelFilter +
+                    " ORDER BY s.level, s.name";
+            try (Cursor cursor = db.rawQuery(sql, args.toArray(new String[0]))) {
+                while (cursor.moveToNext()) {
+                    String name = cursor.getString(1);
+                    if (!learnedSpell(name)) {
+                        result.add(new SpellDefinition(
+                                cursor.getInt(0),
+                                name,
+                                cursor.getInt(2),
+                                className,
+                                cursor.getString(3)
+                        ));
+                    }
+                }
+            }
+
+            if (!result.isEmpty()) {
+                return result;
+            }
+
+            String fallbackSql = "SELECT id, name, level, description FROM spell WHERE level <= ?" +
+                    levelFilter.replace("s.level", "level") +
+                    " ORDER BY level, name";
+            List<String> fallbackArgs = new ArrayList<>();
+            fallbackArgs.add(String.valueOf(maxLearnableSpellLevel()));
+            if (presetLevel >= 0) {
+                fallbackArgs.add(String.valueOf(presetLevel));
+            }
+            try (Cursor cursor = db.rawQuery(fallbackSql, fallbackArgs.toArray(new String[0]))) {
+                while (cursor.moveToNext()) {
+                    String name = cursor.getString(1);
+                    if (!learnedSpell(name)) {
+                        result.add(new SpellDefinition(
+                                cursor.getInt(0),
+                                name,
+                                cursor.getInt(2),
+                                "Any",
+                                cursor.getString(3)
+                        ));
+                    }
+                }
+            }
+        } catch (Exception exception) {
+            result.clear();
+        }
+        return result;
+    }
+
+    private SpellDefinition findSpellInDatabase(String spellName) {
+        try (SQLiteDatabase db = openSpellDatabase()) {
+            if (db == null) {
+                return null;
+            }
+            try (Cursor cursor = db.rawQuery(
+                    "SELECT id, name, level, description FROM spell WHERE lower(name) = lower(?) LIMIT 1",
+                    new String[]{spellName}
+            )) {
+                if (cursor.moveToFirst()) {
+                    return new SpellDefinition(
+                            cursor.getInt(0),
+                            cursor.getString(1),
+                            cursor.getInt(2),
+                            "Database",
+                            cursor.getString(3)
+                    );
+                }
+            }
+        } catch (Exception ignored) {
+            return null;
+        }
+        return null;
+    }
+
+    private String databaseClassName() {
+        String value = selectedCharacter.characterClass.toLowerCase();
+        if (value.contains("wizard") || value.contains("волшеб")) {
+            return "Wizard";
+        } else if (value.contains("sorcerer") || value.contains("чарод")) {
+            return "Sorcerer";
+        } else if (value.contains("warlock") || value.contains("колдун")) {
+            return "Warlock";
+        } else if (value.contains("cleric") || value.contains("жрец")) {
+            return "Cleric";
+        } else if (value.contains("druid") || value.contains("друид")) {
+            return "Druid";
+        } else if (value.contains("bard") || value.contains("бард")) {
+            return "Bard";
+        } else if (value.contains("paladin") || value.contains("палад")) {
+            return "Paladin";
+        } else if (value.contains("ranger") || value.contains("следоп")) {
+            return "Ranger";
+        } else if (value.contains("artificer") || value.contains("изобрет")) {
+            return "Artificer";
+        }
+        return selectedCharacter.characterClass;
+    }
+
     private List<SpellDefinition> availableSpellsFor(int presetLevel) {
+        List<SpellDefinition> databaseSpells = availableSpellsFromDatabase(presetLevel);
+        if (!databaseSpells.isEmpty()) {
+            return databaseSpells;
+        }
+
         List<SpellDefinition> result = new ArrayList<>();
         int maxLevel = maxLearnableSpellLevel();
         for (SpellDefinition spell : SPELL_LIBRARY) {
@@ -1384,7 +1707,42 @@ public class MainActivity extends AppCompatActivity {
         return result;
     }
 
+    private void addKnownSpell(SpellDefinition spell) {
+        if (spell.id >= 0) {
+            try (SQLiteDatabase db = openSpellDatabase()) {
+                if (db != null) {
+                    db.execSQL(
+                            "INSERT OR IGNORE INTO character_spell (character_id, spell_id, is_prepared, source) VALUES (?, ?, 1, 'class')",
+                            new Object[]{activeCharacterId(), spell.id}
+                    );
+                    return;
+                }
+            } catch (Exception ignored) {
+                // Fall back to the legacy in-memory spellbook below.
+            }
+        }
+        selectedCharacter.spellbook.get(spell.level).add(spell.name);
+        saveCharacters();
+    }
+
     private boolean learnedSpell(String spellName) {
+        try (SQLiteDatabase db = openSpellDatabase()) {
+            if (db != null) {
+                try (Cursor cursor = db.rawQuery(
+                        "SELECT 1 FROM character_spell cs " +
+                                "JOIN spell s ON s.id = cs.spell_id " +
+                                "WHERE cs.character_id = ? AND lower(s.name) = lower(?) LIMIT 1",
+                        new String[]{String.valueOf(activeCharacterId()), spellName}
+                )) {
+                    if (cursor.moveToFirst()) {
+                        return true;
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+            // Fall back to the legacy spellbook check below.
+        }
+
         for (List<String> levelSpells : selectedCharacter.spellbook) {
             for (String learned : levelSpells) {
                 if (displaySpellName(learned).equalsIgnoreCase(spellName)) {
@@ -1428,6 +1786,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private SpellDefinition findSpell(String spellName) {
+        SpellDefinition databaseSpell = findSpellInDatabase(spellName);
+        if (databaseSpell != null) {
+            return databaseSpell;
+        }
+
         for (SpellDefinition spell : SPELL_LIBRARY) {
             if (spell.name.equalsIgnoreCase(spellName)) {
                 return spell;
@@ -1442,8 +1805,11 @@ public class MainActivity extends AppCompatActivity {
                 ? "Description is unavailable for an old spell."
                 : spell.description;
         boolean cantrip = spellLevel == 0;
+        int maximum = spellLevel == 0 ? 0 : maximumSlots()[spellLevel];
+        int used = spellLevel == 0 ? 0 : Math.min(usedSlots()[spellLevel], maximum);
+        int remaining = Math.max(maximum - used, 0);
         String message = description + "\n\nLevel: " + spellLevel + "\nUses: "
-                + selectedCharacter.currentSpellUses + " / " + selectedCharacter.maxSpellUses
+                + (cantrip ? "unlimited" : remaining + " / " + maximum)
                 + (cantrip ? "\nCantrip: does not spend uses." : "");
 
         new AlertDialog.Builder(this)
@@ -1456,13 +1822,28 @@ public class MainActivity extends AppCompatActivity {
 
     private void castSpell(int spellLevel, String spellName) {
         if (spellLevel > 0) {
-            if (selectedCharacter.currentSpellUses <= 0) {
-                Toast.makeText(this, "No spell uses available. Take a rest.", Toast.LENGTH_SHORT).show();
+            int maximum = maximumSlots()[spellLevel];
+            int used = Math.min(usedSlots()[spellLevel], maximum);
+            if (maximum <= 0 || used >= maximum) {
+                Toast.makeText(this, "No spell slots available. Take a rest.", Toast.LENGTH_SHORT).show();
                 return;
             }
-            selectedCharacter.currentSpellUses--;
+            try (SQLiteDatabase db = openSpellDatabase()) {
+                if (db != null) {
+                    db.execSQL(
+                            "INSERT OR IGNORE INTO character_spell_slots (character_id, spell_level, used_slots) VALUES (?, ?, 0)",
+                            new Object[]{activeCharacterId(), spellLevel}
+                    );
+                    db.execSQL(
+                            "UPDATE character_spell_slots SET used_slots = used_slots + 1 WHERE character_id = ? AND spell_level = ?",
+                            new Object[]{activeCharacterId(), spellLevel}
+                    );
+                }
+            } catch (Exception exception) {
+                Toast.makeText(this, "Could not update spell slot usage", Toast.LENGTH_SHORT).show();
+                return;
+            }
         }
-        saveCharacters();
         Toast.makeText(this, spellName + " cast", Toast.LENGTH_SHORT).show();
         showCharacterSheet();
     }
@@ -2309,22 +2690,19 @@ public class MainActivity extends AppCompatActivity {
         preferences.edit().putString(KEY_CHARACTERS, array.toString()).apply();
     }
 
-    @Override
-    public void onBackPressed() {
-        if (selectedCharacter != null) {
-            showCharacterSelect();
-        } else {
-            super.onBackPressed();
-        }
-    }
-
     private static class SpellDefinition {
+        final int id;
         final String name;
         final int level;
         final String classes;
         final String description;
 
         SpellDefinition(String name, int level, String classes, String description) {
+            this(-1, name, level, classes, description);
+        }
+
+        SpellDefinition(int id, String name, int level, String classes, String description) {
+            this.id = id;
             this.name = name;
             this.level = level;
             this.classes = classes;
