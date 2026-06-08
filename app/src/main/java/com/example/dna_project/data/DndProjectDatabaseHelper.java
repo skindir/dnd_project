@@ -233,6 +233,7 @@ public class DndProjectDatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("CREATE TABLE IF NOT EXISTS character_detail_option (id INTEGER PRIMARY KEY, option_type TEXT NOT NULL, value TEXT NOT NULL, UNIQUE(option_type, value))");
         db.execSQL("CREATE TRIGGER IF NOT EXISTS characters_class_required_insert BEFORE INSERT ON characters WHEN NEW.class_id IS NULL BEGIN SELECT RAISE(ABORT, 'characters.class_id is required'); END");
         db.execSQL("CREATE TRIGGER IF NOT EXISTS characters_class_required_update BEFORE UPDATE OF class_id ON characters WHEN NEW.class_id IS NULL BEGIN SELECT RAISE(ABORT, 'characters.class_id is required'); END");
+        db.execSQL("CREATE TRIGGER IF NOT EXISTS characters_max_count_insert BEFORE INSERT ON characters WHEN (SELECT COUNT(*) FROM characters) >= 20 BEGIN SELECT RAISE(ABORT, 'maximum character count is 20'); END");
     }
 
     private static void addColumnIfMissing(SQLiteDatabase db, String table, String column, String type) {
@@ -251,123 +252,214 @@ public class DndProjectDatabaseHelper extends SQLiteOpenHelper {
         insertNamedRows(db, "race", new String[]{"Human", "Dwarf", "Elf", "Halfling", "Gnome", "Half-Elf", "Half-Orc", "Tiefling", "Dragonborn"});
         insertNamedRows(db, "background", new String[]{"Acolyte", "Entertainer", "Urchin", "Noble", "Guild Artisan", "Sailor", "Sage", "Folk Hero", "Hermit", "Criminal", "Retainer", "Soldier", "Outlander", "Charlatan"});
         insertNamedRows(db, "language", new String[]{"Abyssal", "Druidic", "Giant", "Infernal", "Thieves' Cant", "Celestial", "Undercommon", "Primordial", "Common", "Orc", "Elvish", "Gnomish", "Goblin", "Half-Elvish", "Halfling", "Sylvan", "Tiefling", "Aquan"});
-        insertNamedRows(db, "proficiency", new String[]{"Saving Throw (Strength)", "Athletics", "Saving Throw (Dexterity)", "Acrobatics", "Sleight of Hand", "Stealth", "Saving Throw (Constitution)", "Saving Throw (Intelligence)", "Arcana", "History", "Investigation", "Nature", "Religion", "Saving Throw (Wisdom)", "Animal Handling", "Insight", "Medicine", "Perception", "Survival", "Saving Throw (Charisma)", "Deception", "Intimidation", "Performance", "Persuasion"});
+        insertNamedRows(db, "proficiency", new String[]{
+							"Saving Throw: Strength",
+							"Skill: Athletics",
+							"Saving Throw: Dexterity",
+							"Skill: Acrobatics",
+							"Skill: Sleight of Hand",
+							"Skill: Stealth",
+							"Saving Throw: Constitution",
+							"Saving Throw: Intelligence",
+							"Skill: Arcana",
+							"Skill: History",
+							"Skill: Investigation",
+							"Skill: Nature",
+							"Skill: Religion",
+							"Saving Throw: Wisdom",
+							"Skill: Animal Handling",
+							"Skill: Insight",
+							"Skill: Medicine",
+							"Skill: Perception",
+							"Skill: Survival",
+							"Saving Throw: Charisma",
+							"Skill: Deception",
+							"Skill: Intimidation",
+							"Skill: Performance",
+							"Skill: Persuasion"
+		});
         insertDetailOptions(db, "alignment", new String[]{"Lawful Good", "Neutral Good", "Chaotic Good", "Lawful Neutral", "True Neutral", "Chaotic Neutral", "Lawful Evil", "Neutral Evil", "Chaotic Evil"});
-        insertDetailOptions(db, "personality_traits", new String[]{"I am always polite and respectful", "I trust my friends and protect them", "I am used to seeking profit in any situation", "I speak plainly, even when it is unpleasant", "I stay calm in the face of danger", "I love beautiful stories and glorious deeds", "I find it hard to trust strangers", "I am always seeking new knowledge"});
-        insertDetailOptions(db, "ideals", new String[]{"Good", "Freedom", "Justice", "Honor", "Knowledge", "Power", "Tradition", "Redemption"});
-        insertDetailOptions(db, "bonds", new String[]{"I protect my family", "I serve my people", "I owe my life to an old friend", "I seek a lost relic", "I must avenge the past", "I keep my mentor's secret", "I want to restore my lost honor", "I am bound by oath to an order"});
-        insertDetailOptions(db, "flaws", new String[]{"I am too trusting", "I am greedy for gold", "I am hot-tempered", "I fear losing control", "I often underestimate danger", "I envy the fame of others", "I have trouble admitting mistakes", "I easily give in to temptation"});
+        insertDetailOptions(db, "personality_trait", new String[]{"I am always polite and respectful", "I trust my friends and protect them", "I am used to seeking profit in any situation", "I speak plainly, even when it is unpleasant", "I stay calm in the face of danger", "I love beautiful stories and glorious deeds", "I find it hard to trust strangers", "I am always seeking new knowledge"});
+        insertDetailOptions(db, "ideal", new String[]{"Good", "Freedom", "Justice", "Honor", "Knowledge", "Power", "Tradition", "Redemption"});
+        insertDetailOptions(db, "bond", new String[]{"I protect my family", "I serve my people", "I owe my life to an old friend", "I seek a lost relic", "I must avenge the past", "I keep my mentor's secret", "I want to restore my lost honor", "I am bound by oath to an order"});
+        insertDetailOptions(db, "flaw", new String[]{"I am too trusting", "I am greedy for gold", "I am hot-tempered", "I fear losing control", "I often underestimate danger", "I envy the fame of others", "I have trouble admitting mistakes", "I easily give in to temptation"});
         insertClassBaseStats(db);
         insertClassProficiencies(db);
     }
 
-    private static void insertClasses(SQLiteDatabase db) {
-        insertClass(db, 1, "Bard", "full", 8);
-        insertClass(db, 2, "Barbarian", "none", 12);
-        insertClass(db, 3, "Fighter", "none", 10);
-        insertClass(db, 4, "Wizard", "full", 6);
-        insertClass(db, 5, "Druid", "full", 8);
-        insertClass(db, 6, "Cleric", "full", 8);
-        insertClass(db, 7, "Artificer", "half", 8);
-        insertClass(db, 8, "Warlock", "pact", 8);
-        insertClass(db, 9, "Monk", "none", 8);
-        insertClass(db, 10, "Paladin", "half", 10);
-        insertClass(db, 11, "Rogue", "none", 8);
-        insertClass(db, 12, "Ranger", "half", 10);
-        insertClass(db, 13, "Sorcerer", "full", 6);
-    }
+	private static void insertClasses(SQLiteDatabase db) {
+		insertClass(db, "Bard", "full", 8);
+		insertClass(db, "Barbarian", "none", 12);
+		insertClass(db, "Fighter", "none", 10);
+		insertClass(db, "Wizard", "full", 6);
+		insertClass(db, "Druid", "full", 8);
+		insertClass(db, "Cleric", "full", 8);
+		insertClass(db, "Artificer", "half", 8);
+		insertClass(db, "Warlock", "pact", 8);
+		insertClass(db, "Monk", "none", 8);
+		insertClass(db, "Paladin", "half", 10);
+		insertClass(db, "Rogue", "none", 8);
+		insertClass(db, "Ranger", "half", 10);
+		insertClass(db, "Sorcerer", "full", 6);
+	}
 
-    private static void insertClass(SQLiteDatabase db, int id, String name, String casterType, int hitDice) {
-        ContentValues values = new ContentValues();
-        values.put("id", id);
-        values.put("name", name);
-        values.put("caster_type", casterType);
-        values.put("hit_dice", hitDice);
-        db.insertWithOnConflict("class", null, values, SQLiteDatabase.CONFLICT_IGNORE);
-    }
+	private static void insertClass(SQLiteDatabase db, String name, String casterType, int hitDice) {
+		if (findIdByName(db, "class", name) != null) {
+			return;
+		}
+
+		ContentValues values = new ContentValues();
+		values.put("name", name);
+		values.put("caster_type", casterType);
+		values.put("hit_dice", hitDice);
+		db.insertWithOnConflict("class", null, values, SQLiteDatabase.CONFLICT_IGNORE);
+	}
 
     private static void insertNamedRows(SQLiteDatabase db, String table, String[] names) {
-        for (int index = 0; index < names.length; index++) {
-            ContentValues values = new ContentValues();
-            values.put("id", index + 1);
-            values.put("name", names[index]);
-            db.insertWithOnConflict(table, null, values, SQLiteDatabase.CONFLICT_IGNORE);
-        }
-    }
+		for (String name : names) {
+			if (findIdByName(db, table, name) != null) {
+				continue;
+			}
 
+			ContentValues values = new ContentValues();
+			values.put("name", name);
+			db.insertWithOnConflict(table, null, values, SQLiteDatabase.CONFLICT_IGNORE);
+		}
+	}
+	private static Integer findIdByName(SQLiteDatabase db, String table, String name) {
+		try (Cursor cursor = db.rawQuery(
+				"SELECT id FROM " + table + " WHERE name = ? LIMIT 1",
+				new String[]{name}
+		)) {
+			if (cursor.moveToFirst()) {
+				return cursor.getInt(0);
+			}
+		}
+
+		return null;
+	}
     private static void insertDetailOptions(SQLiteDatabase db, String optionType, String[] values) {
-        for (String value : values) {
-            ContentValues contentValues = new ContentValues();
-            contentValues.put("option_type", optionType);
-            contentValues.put("value", value);
-            db.insertWithOnConflict("character_detail_option", null, contentValues, SQLiteDatabase.CONFLICT_IGNORE);
-        }
-    }
+		for (String value : values) {
+			try (Cursor cursor = db.rawQuery(
+					"SELECT id FROM character_detail_option " +
+							"WHERE option_type = ? AND value = ? LIMIT 1",
+					new String[]{optionType, value}
+			)) {
+				if (cursor.moveToFirst()) {
+					continue;
+				}
+			}
+
+			ContentValues contentValues = new ContentValues();
+			contentValues.put("option_type", optionType);
+			contentValues.put("value", value);
+
+			db.insertWithOnConflict(
+					"character_detail_option",
+					null,
+					contentValues,
+					SQLiteDatabase.CONFLICT_IGNORE
+			);
+		}
+	}
 
     private static void insertClassBaseStats(SQLiteDatabase db) {
-        insertClassBaseStats(db, 1, 10, 12, 14, 12, 13, 14);
-        insertClassBaseStats(db, 2, 16, 16, 12, 8, 10, 13);
-        insertClassBaseStats(db, 3, 16, 14, 14, 10, 10, 11);
-        insertClassBaseStats(db, 4, 8, 14, 12, 16, 14, 11);
-        insertClassBaseStats(db, 5, 8, 14, 12, 12, 16, 13);
-        insertClassBaseStats(db, 6, 10, 14, 10, 12, 16, 13);
-        insertClassBaseStats(db, 7, 10, 14, 12, 16, 12, 11);
-        insertClassBaseStats(db, 8, 8, 14, 14, 12, 12, 15);
-        insertClassBaseStats(db, 9, 12, 13, 16, 10, 16, 8);
-        insertClassBaseStats(db, 10, 16, 14, 10, 8, 12, 15);
-        insertClassBaseStats(db, 11, 10, 12, 16, 14, 10, 13);
-        insertClassBaseStats(db, 12, 12, 14, 16, 10, 14, 9);
-        insertClassBaseStats(db, 13, 8, 14, 12, 12, 13, 16);
-    }
+		insertClassBaseStats(db, "Bard", 10, 12, 14, 12, 13, 14);
+		insertClassBaseStats(db, "Barbarian", 16, 16, 12, 8, 10, 13);
+		insertClassBaseStats(db, "Fighter", 16, 14, 14, 10, 10, 11);
+		insertClassBaseStats(db, "Wizard", 8, 14, 12, 16, 14, 11);
+		insertClassBaseStats(db, "Druid", 8, 14, 12, 12, 16, 13);
+		insertClassBaseStats(db, "Cleric", 10, 14, 10, 12, 16, 13);
+		insertClassBaseStats(db, "Artificer", 10, 14, 12, 16, 12, 11);
+		insertClassBaseStats(db, "Warlock", 8, 14, 14, 12, 12, 15);
+		insertClassBaseStats(db, "Monk", 12, 13, 16, 10, 16, 8);
+		insertClassBaseStats(db, "Paladin", 16, 14, 10, 8, 12, 15);
+		insertClassBaseStats(db, "Rogue", 10, 12, 16, 14, 10, 13);
+		insertClassBaseStats(db, "Ranger", 12, 14, 16, 10, 14, 9);
+		insertClassBaseStats(db, "Sorcerer", 8, 14, 12, 12, 13, 16);
+	}
 
-    private static void insertClassBaseStats(
-            SQLiteDatabase db,
-            int classId,
-            int strength,
-            int constitution,
-            int dexterity,
-            int intelligence,
-            int wisdom,
-            int charisma
-    ) {
-        ContentValues values = new ContentValues();
-        values.put("class_id", classId);
-        values.put("strength", strength);
-        values.put("constitution", constitution);
-        values.put("dexterity", dexterity);
-        values.put("intelligence", intelligence);
-        values.put("wisdom", wisdom);
-        values.put("charisma", charisma);
-        db.insertWithOnConflict("class_base_stats", null, values, SQLiteDatabase.CONFLICT_IGNORE);
-    }
+	private static void insertClassBaseStats(
+			SQLiteDatabase db,
+			String className,
+			int strength,
+			int constitution,
+			int dexterity,
+			int intelligence,
+			int wisdom,
+			int charisma
+	) {
+		Integer classId = findIdByName(db, "class", className);
+		if (classId == null) {
+			return;
+		}
+
+		ContentValues values = new ContentValues();
+		values.put("class_id", classId);
+		values.put("strength", strength);
+		values.put("constitution", constitution);
+		values.put("dexterity", dexterity);
+		values.put("intelligence", intelligence);
+		values.put("wisdom", wisdom);
+		values.put("charisma", charisma);
+
+		db.insertWithOnConflict(
+				"class_base_stats",
+				null,
+				values,
+				SQLiteDatabase.CONFLICT_REPLACE
+		);
+	}
 
     private static void insertClassProficiencies(SQLiteDatabase db) {
-        insertClassProficiencies(db, 1, 4, 20);
-        insertClassProficiencies(db, 2, 1, 7);
-        insertClassProficiencies(db, 3, 1, 7);
-        insertClassProficiencies(db, 4, 8, 14);
-        insertClassProficiencies(db, 5, 4, 14);
-        insertClassProficiencies(db, 6, 14, 20);
-        insertClassProficiencies(db, 7, 7, 8);
-        insertClassProficiencies(db, 8, 14, 20);
-        insertClassProficiencies(db, 9, 1, 3);
-        insertClassProficiencies(db, 10, 14, 20);
-        insertClassProficiencies(db, 11, 3, 8);
-        insertClassProficiencies(db, 12, 1, 3);
-        insertClassProficiencies(db, 13, 7, 20);
-    }
+		insertClassProficiencies(db, "Bard", "Skill: Acrobatics", "Saving Throw: Charisma");
+		insertClassProficiencies(db, "Barbarian", "Saving Throw: Strength", "Saving Throw: Constitution");
+		insertClassProficiencies(db, "Fighter", "Saving Throw: Strength", "Saving Throw: Constitution");
+		insertClassProficiencies(db, "Wizard", "Saving Throw: Intelligence", "Saving Throw: Wisdom");
+		insertClassProficiencies(db, "Druid", "Skill: Acrobatics", "Saving Throw: Wisdom");
+		insertClassProficiencies(db, "Cleric", "Saving Throw: Wisdom", "Saving Throw: Charisma");
+		insertClassProficiencies(db, "Artificer", "Saving Throw: Constitution", "Saving Throw: Intelligence");
+		insertClassProficiencies(db, "Warlock", "Saving Throw: Wisdom", "Saving Throw: Charisma");
+		insertClassProficiencies(db, "Monk", "Saving Throw: Strength", "Saving Throw: Dexterity");
+		insertClassProficiencies(db, "Paladin", "Saving Throw: Wisdom", "Saving Throw: Charisma");
+		insertClassProficiencies(db, "Rogue", "Saving Throw: Dexterity", "Saving Throw: Intelligence");
+		insertClassProficiencies(db, "Ranger", "Saving Throw: Strength", "Saving Throw: Dexterity");
+		insertClassProficiencies(db, "Sorcerer", "Saving Throw: Constitution", "Saving Throw: Charisma");
+	}
 
-    private static void insertClassProficiencies(SQLiteDatabase db, int classId, int firstProficiencyId, int secondProficiencyId) {
-        insertClassProficiency(db, classId, firstProficiencyId);
-        insertClassProficiency(db, classId, secondProficiencyId);
-    }
+	private static void insertClassProficiencies(
+			SQLiteDatabase db,
+			String className,
+			String firstProficiencyName,
+			String secondProficiencyName
+	) {
+		insertClassProficiency(db, className, firstProficiencyName);
+		insertClassProficiency(db, className, secondProficiencyName);
+	}
 
-    private static void insertClassProficiency(SQLiteDatabase db, int classId, int proficiencyId) {
-        ContentValues values = new ContentValues();
-        values.put("class_id", classId);
-        values.put("proficiency_id", proficiencyId);
-        db.insertWithOnConflict("class_proficiency", null, values, SQLiteDatabase.CONFLICT_IGNORE);
-    }
+	private static void insertClassProficiency(
+			SQLiteDatabase db,
+			String className,
+			String proficiencyName
+	) {
+		Integer classId = findIdByName(db, "class", className);
+		Integer proficiencyId = findIdByName(db, "proficiency", proficiencyName);
+
+		if (classId == null || proficiencyId == null) {
+			return;
+		}
+
+		ContentValues values = new ContentValues();
+		values.put("class_id", classId);
+		values.put("proficiency_id", proficiencyId);
+
+		db.insertWithOnConflict(
+				"class_proficiency",
+				null,
+				values,
+				SQLiteDatabase.CONFLICT_IGNORE
+		);
+	}
 
     public static class DbOption {
         public final int id;

@@ -49,7 +49,7 @@ import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final int MAX_CHARACTERS = 15;
+    private static final int MAX_CHARACTERS = 20;
     private static final int TOTAL_ABILITY_POINTS = 75;
 
     private static final int TAB_INVENTORY = 1;
@@ -86,21 +86,6 @@ public class MainActivity extends AppCompatActivity {
             R.drawable.tab_other,
             R.drawable.tab_key_items
     };
-    private static final String[] CHARACTER_CLASSES = {
-            "Bard",
-            "Barbarian",
-            "Fighter",
-            "Wizard",
-            "Druid",
-            "Cleric",
-            "Artificer",
-            "Warlock",
-            "Monk",
-            "Paladin",
-            "Rogue",
-            "Ranger",
-            "Sorcerer"
-    };
     private static final SpellDefinition[] SPELL_LIBRARY = {
             new SpellDefinition("Fire Bolt", 0, "Wizard,Sorcerer,Artificer", "Ranged spell attack. Deals fire damage. Cantrip, does not spend spell uses."),
             new SpellDefinition("Mage Hand", 0, "Wizard,Sorcerer,Warlock,Bard,Artificer", "Creates a spectral hand for simple interactions. Cantrip, does not spend spell uses."),
@@ -126,109 +111,6 @@ public class MainActivity extends AppCompatActivity {
             new SpellDefinition("Power Word Stun", 8, "Wizard,Sorcerer,Bard,Warlock", "Stun a creature with 150 hit points or fewer."),
             new SpellDefinition("Wish", 9, "Wizard,Sorcerer", "The mightiest spell, capable of reshaping reality.")
     };
-    private static final String[] RACE_OPTIONS = {
-            "Hill Dwarf",
-            "Mountain Dwarf",
-            "High Elf",
-            "Wood Elf",
-            "Dark Elf (Drow)",
-            "Lightfoot Halfling",
-            "Stout Halfling",
-            "Human",
-            "Variant Human",
-            "Dragonborn",
-            "Forest Gnome",
-            "Rock Gnome",
-            "Half-Elf",
-            "Half-Orc",
-            "Tiefling"
-    };
-    private static final String[] BACKGROUND_OPTIONS = {
-            "Acolyte",
-            "Entertainer",
-            "Urchin",
-            "Noble",
-            "Guild Artisan",
-            "Sailor",
-            "Sage",
-            "Folk Hero",
-            "Hermit",
-            "Criminal",
-            "Soldier",
-            "Outlander",
-            "Charlatan"
-    };
-    private static final String[] ALIGNMENT_OPTIONS = {
-            "Lawful Good",
-            "Neutral Good",
-            "Chaotic Good",
-            "Lawful Neutral",
-            "True Neutral",
-            "Chaotic Neutral",
-            "Lawful Evil",
-            "Neutral Evil",
-            "Chaotic Evil"
-    };
-    private static final String[] PERSONALITY_TRAIT_OPTIONS = {
-            "I am always polite and respectful",
-            "I trust my friends and protect them",
-            "I am used to seeking profit in any situation",
-            "I speak plainly, even when it is unpleasant",
-            "I stay calm in the face of danger",
-            "I love beautiful stories and glorious deeds",
-            "I find it hard to trust strangers",
-            "I am always seeking new knowledge"
-    };
-    private static final String[] IDEAL_OPTIONS = {
-            "Good",
-            "Freedom",
-            "Justice",
-            "Honor",
-            "Knowledge",
-            "Power",
-            "Tradition",
-            "Redemption"
-    };
-    private static final String[] BOND_OPTIONS = {
-            "I protect my family",
-            "I serve my people",
-            "I owe my life to an old friend",
-            "I seek a lost relic",
-            "I must avenge the past",
-            "I keep my mentor's secret",
-            "I want to restore my lost honor",
-            "I am bound by oath to an order"
-    };
-    private static final String[] FLAW_OPTIONS = {
-            "I am too trusting",
-            "I am greedy for gold",
-            "I am hot-tempered",
-            "I fear losing control",
-            "I often underestimate danger",
-            "I envy the fame of others",
-            "I have trouble admitting mistakes",
-            "I easily give in to temptation"
-    };
-    private static final String[] LANGUAGE_OPTIONS = {
-            "Abyssal",
-            "Druidic",
-            "Giant",
-            "Infernal",
-            "Thieves' Cant",
-            "Celestial",
-            "Undercommon",
-            "Primordial",
-            "Common",
-            "Orc",
-            "Elvish",
-            "Gnomish",
-            "Goblin",
-            "Halfling",
-            "Sylvan",
-            "Dwarvish",
-            "Draconic",
-            "Deep Speech"
-    };
     private static final String[][] SAVING_THROW_GROUPS = {
             {"Strength", "Saving Throw (Strength)\nAthletics"},
             {"Dexterity", "Saving Throw (Dexterity)\nAcrobatics\nSleight of Hand\nStealth"},
@@ -237,34 +119,6 @@ public class MainActivity extends AppCompatActivity {
             {"Wisdom", "Saving Throw (Wisdom)\nAnimal Handling\nInsight\nMedicine\nPerception\nSurvival"},
             {"Charisma", "Saving Throw (Charisma)\nDeception\nIntimidation\nPerformance\nPersuasion"}
     };
-    private static final String[] SAVING_THROW_OPTIONS = {
-            "Saving Throw (Strength)",
-            "Athletics",
-            "Saving Throw (Dexterity)",
-            "Acrobatics",
-            "Sleight of Hand",
-            "Stealth",
-            "Saving Throw (Constitution)",
-            "Saving Throw (Intelligence)",
-            "Arcana",
-            "History",
-            "Investigation",
-            "Nature",
-            "Religion",
-            "Saving Throw (Wisdom)",
-            "Animal Handling",
-            "Insight",
-            "Medicine",
-            "Perception",
-            "Survival",
-            "Saving Throw (Charisma)",
-            "Deception",
-            "Intimidation",
-            "Performance",
-            "Persuasion"
-
-    };
-
     private final List<DndCharacter> characters = new ArrayList<>();
     private CharacterRepository characterRepository;
     private DndProjectDatabaseHelper projectDatabase;
@@ -315,7 +169,7 @@ public class MainActivity extends AppCompatActivity {
         createButton.setEnabled(characters.size() < MAX_CHARACTERS);
         createButton.setOnClickListener(view -> {
             if (characters.size() >= MAX_CHARACTERS) {
-                Toast.makeText(this, "You can create a maximum of 15 characters", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "You can create a maximum of 20 characters", Toast.LENGTH_SHORT).show();
             } else {
                 showCreateCharacter();
             }
@@ -355,10 +209,10 @@ public class MainActivity extends AppCompatActivity {
         List<DbOption> languageOptions = projectDatabase.getOptions("language");
         List<DbOption> proficiencyOptions = projectDatabase.getOptions("proficiency");
         List<DbOption> alignmentOptions = projectDatabase.getCharacterDetailOptions("alignment");
-        List<DbOption> personalityTraitOptions = projectDatabase.getCharacterDetailOptions("personality_traits");
-        List<DbOption> idealOptions = projectDatabase.getCharacterDetailOptions("ideals");
-        List<DbOption> bondOptions = projectDatabase.getCharacterDetailOptions("bonds");
-        List<DbOption> flawOptions = projectDatabase.getCharacterDetailOptions("flaws");
+        List<DbOption> personalityTraitOptions = projectDatabase.getCharacterDetailOptions("personality_trait");
+        List<DbOption> idealOptions = projectDatabase.getCharacterDetailOptions("ideal");
+        List<DbOption> bondOptions = projectDatabase.getCharacterDetailOptions("bond");
+        List<DbOption> flawOptions = projectDatabase.getCharacterDetailOptions("flaw");
 
         TextInputEditText nameInput = textInput(screen, "Character Name", "");
         TextView selectedClass = bodyText("No class selected");
@@ -2569,58 +2423,6 @@ public class MainActivity extends AppCompatActivity {
         params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, weight);
         cell.setLayoutParams(params);
         table.addView(cell);
-    }
-
-    private String languagesSummary(boolean[] languageSelections) {
-        List<String> languages = collectSelectedLanguages(languageSelections);
-        if (languages.isEmpty()) {
-            return "not selected";
-        }
-
-        StringBuilder summary = new StringBuilder();
-        for (String language : languages) {
-            if (summary.length() > 0) {
-                summary.append(", ");
-            }
-            summary.append(language);
-        }
-        return summary.toString();
-    }
-
-    private List<String> collectSelectedLanguages(boolean[] languageSelections) {
-        List<String> languages = new ArrayList<>();
-        for (int index = 0; index < LANGUAGE_OPTIONS.length && index < languageSelections.length; index++) {
-            if (languageSelections[index]) {
-                languages.add(LANGUAGE_OPTIONS[index]);
-            }
-        }
-        return languages;
-    }
-
-    private String savingThrowsSummary(boolean[] savingThrowSelections) {
-        List<String> savingThrows = collectSelectedSavingThrows(savingThrowSelections);
-        if (savingThrows.isEmpty()) {
-            return "not selected";
-        }
-
-        StringBuilder summary = new StringBuilder();
-        for (String savingThrow : savingThrows) {
-            if (summary.length() > 0) {
-                summary.append(", ");
-            }
-            summary.append(savingThrow);
-        }
-        return summary.toString();
-    }
-
-    private List<String> collectSelectedSavingThrows(boolean[] savingThrowSelections) {
-        List<String> savingThrows = new ArrayList<>();
-        for (int index = 0; index < SAVING_THROW_OPTIONS.length && index < savingThrowSelections.length; index++) {
-            if (savingThrowSelections[index]) {
-                savingThrows.add(SAVING_THROW_OPTIONS[index]);
-            }
-        }
-        return savingThrows;
     }
 
     private String[] optionNames(List<DbOption> options) {
