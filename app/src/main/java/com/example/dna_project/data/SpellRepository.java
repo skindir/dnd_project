@@ -21,16 +21,13 @@ public class SpellRepository {
         ContentValues values = new ContentValues();
         values.put(DndDatabaseHelper.COLUMN_NAME, name);
         values.put(DndDatabaseHelper.COLUMN_LEVEL, level);
-        values.put(DndDatabaseHelper.COLUMN_CLASS_NAME, className);
-        values.put(DndDatabaseHelper.COLUMN_RANGE, range);
-        values.put(DndDatabaseHelper.COLUMN_ATTACK_TYPE, attackType);
-        values.put(DndDatabaseHelper.COLUMN_DAMAGE_TYPE, damageType);
-        values.put(DndDatabaseHelper.COLUMN_DAMAGE, damage);
+        values.put(DndDatabaseHelper.COLUMN_DESCRIPTION, buildDescription(
+                className, range, attackType, damageType, damage
+        ));
         return db.insert(DndDatabaseHelper.TABLE_SPELLS, null, values);
     }
 
     public List<Spell> getAllSpells() {
-        databaseHelper.ensureSeedData();
         List<Spell> spells = new ArrayList<>();
         SQLiteDatabase db = databaseHelper.getReadableDatabase();
 
@@ -48,15 +45,24 @@ public class SpellRepository {
                         cursor.getLong(cursor.getColumnIndexOrThrow(DndDatabaseHelper.COLUMN_ID)),
                         cursor.getString(cursor.getColumnIndexOrThrow(DndDatabaseHelper.COLUMN_NAME)),
                         cursor.getInt(cursor.getColumnIndexOrThrow(DndDatabaseHelper.COLUMN_LEVEL)),
-                        cursor.getString(cursor.getColumnIndexOrThrow(DndDatabaseHelper.COLUMN_CLASS_NAME)),
-                        cursor.getString(cursor.getColumnIndexOrThrow(DndDatabaseHelper.COLUMN_RANGE)),
-                        cursor.getString(cursor.getColumnIndexOrThrow(DndDatabaseHelper.COLUMN_ATTACK_TYPE)),
-                        cursor.getString(cursor.getColumnIndexOrThrow(DndDatabaseHelper.COLUMN_DAMAGE_TYPE)),
-                        cursor.getString(cursor.getColumnIndexOrThrow(DndDatabaseHelper.COLUMN_DAMAGE))
+                        "",
+                        "",
+                        "",
+                        "",
+                        ""
                 ));
             }
         }
 
         return spells;
+    }
+
+    private static String buildDescription(String className, String range, String attackType,
+                                           String damageType, String damage) {
+        return "Class: " + className + "\n" +
+                "Range: " + range + "\n" +
+                "Attack type: " + attackType + "\n" +
+                "Damage type: " + damageType + "\n" +
+                "Damage: " + damage;
     }
 }

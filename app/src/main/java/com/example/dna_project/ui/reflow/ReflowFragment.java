@@ -137,13 +137,7 @@ public class ReflowFragment extends Fragment {
             content.addView(createBodyText(getString(R.string.empty_spell_list)));
         } else {
             for (Spell spell : spells) {
-                content.addView(createBodyText(getString(
-                        R.string.spell_row_format,
-                        spell.getName(),
-                        spell.getClassName(),
-                        spell.getDamage(),
-                        spell.getDamageType()
-                )));
+                content.addView(createBodyText(spell.getName()));
             }
         }
 
