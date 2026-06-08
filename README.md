@@ -9,7 +9,7 @@ DND Companion is an Android application for keeping Dungeons & Dragons character
 - Create new characters.
 - Select previously created characters.
 - Delete characters from the character selection screen.
-- Limit the local character list to 15 characters.
+- Limit the local character list to 20 characters.
 - Choose a class, race, background, and alignment.
 - Choose personality traits, ideals, bonds, and flaws.
 - Choose languages and proficiencies.
