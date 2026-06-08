@@ -1,6 +1,5 @@
 package com.example.dna_project;
 
-import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.InputType;
@@ -20,21 +19,17 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.dna_project.data.CharacterRepository;
+import com.example.dna_project.data.CharacterRepository.CharacterData;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String PREFS_NAME = "dnd_characters";
-    private static final String KEY_CHARACTERS = "characters";
     private static final int MAX_CHARACTERS = 15;
     private static final int TOTAL_ABILITY_POINTS = 50;
 
@@ -104,15 +99,21 @@ public class MainActivity extends AppCompatActivity {
             new SpellDefinition("Wish", 9, "Wizard,Sorcerer", "The mightiest spell, capable of reshaping reality.")
     };
     private static final String[] RACE_OPTIONS = {
+            "Hill Dwarf",
+            "Mountain Dwarf",
+            "High Elf",
+            "Wood Elf",
+            "Dark Elf (Drow)",
+            "Lightfoot Halfling",
+            "Stout Halfling",
             "Human",
-            "Dwarf",
-            "Elf",
-            "Halfling",
-            "Gnome",
+            "Variant Human",
+            "Dragonborn",
+            "Forest Gnome",
+            "Rock Gnome",
             "Half-Elf",
             "Half-Orc",
-            "Tiefling",
-            "Dragonborn"
+            "Tiefling"
     };
     private static final String[] BACKGROUND_OPTIONS = {
             "Acolyte",
@@ -125,7 +126,6 @@ public class MainActivity extends AppCompatActivity {
             "Folk Hero",
             "Hermit",
             "Criminal",
-            "Retainer",
             "Soldier",
             "Outlander",
             "Charlatan"
@@ -195,11 +195,11 @@ public class MainActivity extends AppCompatActivity {
             "Elvish",
             "Gnomish",
             "Goblin",
-            "Half-Elvish",
             "Halfling",
             "Sylvan",
-            "Tiefling",
-            "Aquan"
+            "Dwarvish",
+            "Draconic",
+            "Deep Speech"
     };
     private static final String[][] SAVING_THROW_GROUPS = {
             {"Strength", "Saving Throw (Strength)\nAthletics"},
@@ -238,7 +238,7 @@ public class MainActivity extends AppCompatActivity {
     };
 
     private final List<DndCharacter> characters = new ArrayList<>();
-    private SharedPreferences preferences;
+    private CharacterRepository characterRepository;
     private FrameLayout root;
     private DndCharacter selectedCharacter;
     private int selectedTab = TAB_STATS;
@@ -247,7 +247,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        characterRepository = new CharacterRepository(this);
         root = new FrameLayout(this);
         root.setBackgroundResource(R.drawable.dnd_screen_bg);
         setContentView(root);
@@ -1024,8 +1024,8 @@ public class MainActivity extends AppCompatActivity {
                 .setTitle("Delete character?")
                 .setMessage(character.name + " will be removed from the list.")
                 .setPositiveButton("Delete", (dialog, which) -> {
+                    characterRepository.deleteCharacter(character.databaseId);
                     characters.remove(character);
-                    saveCharacters();
                     showCharacterSelect();
                 })
                 .setNegativeButton("Cancel", null)
@@ -2290,23 +2290,80 @@ public class MainActivity extends AppCompatActivity {
 
     private void loadCharacters() {
         characters.clear();
-        String rawCharacters = preferences.getString(KEY_CHARACTERS, "[]");
-        try {
-            JSONArray array = new JSONArray(rawCharacters);
-            for (int i = 0; i < array.length(); i++) {
-                characters.add(DndCharacter.fromJson(array.getJSONObject(i)));
-            }
-        } catch (JSONException exception) {
-            preferences.edit().remove(KEY_CHARACTERS).apply();
+        for (CharacterData data : characterRepository.loadCharacters()) {
+            characters.add(fromDatabase(data));
         }
     }
 
     private void saveCharacters() {
-        JSONArray array = new JSONArray();
         for (DndCharacter character : characters) {
-            array.put(character.toJson());
+            character.databaseId = characterRepository.saveCharacter(toDatabase(character));
         }
-        preferences.edit().putString(KEY_CHARACTERS, array.toString()).apply();
+    }
+
+    private static CharacterData toDatabase(DndCharacter character) {
+        CharacterData data = new CharacterData();
+        data.id = character.databaseId;
+        data.name = character.name;
+        data.characterClass = character.characterClass;
+        data.level = character.level;
+        data.strength = character.strength;
+        data.dexterity = character.dexterity;
+        data.constitution = character.constitution;
+        data.intelligence = character.intelligence;
+        data.charisma = character.charisma;
+        data.wisdom = character.wisdom;
+        data.speed = character.speed;
+        data.armorClass = character.armorClass;
+        data.race = character.race;
+        data.background = character.background;
+        data.alignment = character.alignment;
+        data.currentHp = character.currentHp;
+        data.maxHp = character.maxHp;
+        data.temporaryHp = character.temporaryHp;
+        data.personalityTraits = character.personalityTraits;
+        data.ideals = character.ideals;
+        data.bonds = character.bonds;
+        data.flaws = character.flaws;
+        data.platinum = character.platinumCoins;
+        data.gold = character.goldCoins;
+        data.silver = character.silverCoins;
+        data.copper = character.copperCoins;
+        data.languages.addAll(character.languages);
+        data.savingThrows.addAll(character.savingThrows);
+        for (int level = 0; level < character.spellbook.size(); level++) {
+            data.spellbook.get(level).addAll(character.spellbook.get(level));
+        }
+        return data;
+    }
+
+    private static DndCharacter fromDatabase(CharacterData data) {
+        DndCharacter character = new DndCharacter(
+                data.name, data.characterClass, data.level, data.strength, data.dexterity,
+                data.constitution, data.intelligence, data.charisma, data.wisdom, data.speed,
+                data.armorClass, data.race, data.background, data.alignment, data.currentHp,
+                data.maxHp, data.temporaryHp, data.hitDice, proficiencyBonusForLevel(data.level),
+                10 + Math.floorDiv(data.wisdom - 10, 2), "None", data.personalityTraits,
+                data.ideals, data.bonds, data.flaws, Math.floorDiv(data.dexterity - 10, 2),
+                new ArrayList<>(data.languages), new ArrayList<>(data.savingThrows),
+                copySpellbook(data.spellbook), DndCharacter.maxSpellUsesForLevel(data.level),
+                DndCharacter.maxSpellUsesForLevel(data.level), data.platinum, data.gold,
+                data.silver, data.copper
+        );
+        character.databaseId = data.id;
+        return character;
+    }
+
+    private static int proficiencyBonusForLevel(int level) {
+        return 2 + Math.max(0, level - 1) / 4;
+    }
+
+    private static List<List<String>> copySpellbook(List<List<String>> source) {
+        List<List<String>> result = new ArrayList<>();
+        for (List<String> spells : source) {
+            result.add(new ArrayList<>(spells));
+        }
+        return result;
     }
 
     @Override
@@ -2333,6 +2390,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private static class DndCharacter {
+        long databaseId;
         final String name;
         final String characterClass;
         final int level;
@@ -2637,107 +2695,6 @@ public class MainActivity extends AppCompatActivity {
 
         }
 
-        JSONObject toJson() {
-            JSONObject object = new JSONObject();
-            try {
-                object.put("name", name);
-                object.put("class", characterClass);
-                object.put("level", level);
-                object.put("strength", strength);
-                object.put("dexterity", dexterity);
-                object.put("constitution", constitution);
-                object.put("intelligence", intelligence);
-                object.put("charisma", charisma);
-                object.put("wisdom", wisdom);
-                object.put("speed", speed);
-                object.put("armorClass", armorClass);
-                object.put("race", race);
-                object.put("background", background);
-                object.put("alignment", alignment);
-                object.put("currentHp", currentHp);
-                object.put("maxHp", maxHp);
-                object.put("temporaryHp", temporaryHp);
-                object.put("hitDice", hitDice);
-                object.put("proficiencyBonus", proficiencyBonus);
-                object.put("perception", perception);
-                object.put("featuresAndTraits", featuresAndTraits);
-                object.put("personalityTraits", personalityTraits);
-                object.put("ideals", ideals);
-                object.put("bonds", bonds);
-                object.put("flaws", flaws);
-                object.put("initiative", initiative);
-                object.put("platinumCoins", platinumCoins);
-                object.put("goldCoins", goldCoins);
-                object.put("silverCoins", silverCoins);
-                object.put("copperCoins", copperCoins);
-                JSONArray languagesArray = new JSONArray();
-                for (String language : languages) {
-                    languagesArray.put(language);
-                }
-                object.put("languages", languagesArray);
-                JSONArray savingThrowsArray = new JSONArray();
-                for (String savingThrow : savingThrows) {
-                    savingThrowsArray.put(savingThrow);
-                }
-                object.put("savingThrows", savingThrowsArray);
-
-                JSONArray spellbookArray = new JSONArray();
-                for (List<String> levelSpells : spellbook) {
-                    JSONArray spellsArray = new JSONArray();
-                    for (String spell : levelSpells) {
-                        spellsArray.put(spell);
-                    }
-                    spellbookArray.put(spellsArray);
-                }
-                object.put("spellbook", spellbookArray);
-                object.put("maxSpellUses", maxSpellUses);
-                object.put("currentSpellUses", currentSpellUses);
-            } catch (JSONException ignored) {
-                // Values are local primitive fields, so JSON errors are not expected here.
-            }
-            return object;
-        }
-
-        static DndCharacter fromJson(@NonNull JSONObject object) {
-            return new DndCharacter(
-                    object.optString("name", "No Name"),
-                    object.optString("class", "No Class"),
-                    object.optInt("level", 1),
-                    object.optInt("strength", 10),
-                    object.optInt("dexterity", 10),
-                    object.optInt("constitution", 10),
-                    object.optInt("intelligence", 10),
-                    object.optInt("charisma", 10),
-                    object.optInt("wisdom", 10),
-                    object.optInt("speed", 30),
-                    object.optInt("armorClass", 10),
-                    object.optString("race", "Not specified"),
-                    object.optString("background", "Not specified"),
-                    object.optString("alignment", "Not specified"),
-                    object.optInt("currentHp", 10),
-                    object.optInt("maxHp", 10),
-                    object.optInt("temporaryHp", 0),
-                    object.optString("hitDice", "d8"),
-                    object.optInt("proficiencyBonus", 2),
-                    object.optInt("perception", 10),
-                    object.optString("featuresAndTraits", "None"),
-                    object.optString("personalityTraits", "None"),
-                    object.optString("ideals", "None"),
-                    object.optString("bonds", "None"),
-                    object.optString("flaws", "None"),
-                    object.optInt("initiative", 0),
-                    readLanguages(object.optJSONArray("languages")),
-                    readSavingThrows(object.optJSONArray("savingThrows")),
-                    readSpellbook(object.optJSONArray("spellbook")),
-                    object.optInt("maxSpellUses", maxSpellUsesForLevel(object.optInt("level", 1))),
-                    object.optInt("currentSpellUses", object.optInt("maxSpellUses", maxSpellUsesForLevel(object.optInt("level", 1)))),
-                    object.optInt("platinumCoins", 0),
-                    object.optInt("goldCoins", 0),
-                    object.optInt("silverCoins", 0),
-                    object.optInt("copperCoins", 0)
-            );
-        }
-
         private static int maxSpellUsesForLevel(int level) {
             if (level >= 17) {
                 return 14;
@@ -2767,40 +2724,6 @@ public class MainActivity extends AppCompatActivity {
             copperCoins = (int) (normalizedTotal % 100L);
         }
 
-        private static List<String> readSavingThrows(JSONArray savedSavingThrows) {
-            List<String> savingThrows = new ArrayList<>();
-            if (savedSavingThrows == null) {
-                return savingThrows;
-            }
-
-            for (int index = 0; index < savedSavingThrows.length(); index++) {
-                String savingThrow = savedSavingThrows.optString(index, "").trim();
-                if (!savingThrow.isEmpty()) {
-                    if ("Constitution".equals(savingThrow)) {
-                        savingThrow = "Saving Throw (Constitution)";
-                    }
-                    savingThrows.add(savingThrow);
-                }
-            }
-            return savingThrows;
-        }
-
-        private static List<String> readLanguages(JSONArray savedLanguages) {
-            List<String> languages = new ArrayList<>();
-            if (savedLanguages == null) {
-                return languages;
-            }
-
-            for (int index = 0; index < savedLanguages.length(); index++) {
-                String language = savedLanguages.optString(index, "").trim();
-                if (!language.isEmpty()) {
-                    languages.add(language);
-                }
-            }
-            return languages;
-
-        }
-
         private static List<List<String>> createEmptySpellbook() {
             List<List<String>> spellbook = new ArrayList<>();
             for (int level = 0; level <= 9; level++) {
@@ -2809,26 +2732,6 @@ public class MainActivity extends AppCompatActivity {
             return spellbook;
         }
 
-        private static List<List<String>> readSpellbook(JSONArray savedSpellbook) {
-            List<List<String>> spellbook = createEmptySpellbook();
-            if (savedSpellbook == null) {
-                return spellbook;
-            }
-
-            for (int level = 0; level <= 9 && level < savedSpellbook.length(); level++) {
-                JSONArray spells = savedSpellbook.optJSONArray(level);
-                if (spells == null) {
-                    continue;
-                }
-                for (int index = 0; index < spells.length(); index++) {
-                    String spell = spells.optString(index, "").trim();
-                    if (!spell.isEmpty()) {
-                        spellbook.get(level).add(spell);
-                    }
-                }
-            }
-            return spellbook;
-        }
     }
 
     private static class AspectRatioFrameLayout extends FrameLayout {

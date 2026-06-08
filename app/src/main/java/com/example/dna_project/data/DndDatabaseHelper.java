@@ -1,71 +1,108 @@
 package com.example.dna_project.data;
 
-import android.content.ContentValues;
 import android.content.Context;
-import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
 public class DndDatabaseHelper extends SQLiteOpenHelper {
-    public static final String DATABASE_NAME = "dnd_module.db";
+    public static final String DATABASE_NAME = "dnd_project.db";
     public static final int DATABASE_VERSION = 2;
 
-    public static final String TABLE_SPELLS = "spells";
-    public static final String COLUMN_ID = "_id";
+    public static final String TABLE_SPELLS = "spell";
+    public static final String COLUMN_ID = "id";
     public static final String COLUMN_NAME = "name";
     public static final String COLUMN_LEVEL = "level";
-    public static final String COLUMN_CLASS_NAME = "class_name";
-    public static final String COLUMN_RANGE = "spell_range";
-    public static final String COLUMN_ATTACK_TYPE = "attack_type";
-    public static final String COLUMN_DAMAGE_TYPE = "damage_type";
-    public static final String COLUMN_DAMAGE = "damage";
+    public static final String COLUMN_DESCRIPTION = "description";
 
-    private static final String CREATE_SPELLS_TABLE =
-            "CREATE TABLE " + TABLE_SPELLS + " (" +
-                    COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                    COLUMN_NAME + " TEXT NOT NULL, " +
-                    COLUMN_LEVEL + " INTEGER NOT NULL, " +
-                    COLUMN_CLASS_NAME + " TEXT NOT NULL, " +
-                    COLUMN_RANGE + " TEXT NOT NULL, " +
-                    COLUMN_ATTACK_TYPE + " TEXT NOT NULL, " +
-                    COLUMN_DAMAGE_TYPE + " TEXT NOT NULL, " +
-                    COLUMN_DAMAGE + " TEXT NOT NULL" +
-                    ")";
+    private static final String DATABASE_ASSET_PATH = "databases/" + DATABASE_NAME;
 
     public DndDatabaseHelper(Context context) {
-        super(context, DATABASE_NAME, null, DATABASE_VERSION);
+        super(context, prepareDatabase(context.getApplicationContext()), null, DATABASE_VERSION);
+    }
+
+    private static String prepareDatabase(Context context) {
+        File databaseFile = context.getDatabasePath(DATABASE_NAME);
+        if (databaseFile.exists()) {
+            return DATABASE_NAME;
+        }
+
+        File parent = databaseFile.getParentFile();
+        if (parent != null && !parent.exists() && !parent.mkdirs()) {
+            throw new IllegalStateException("Could not create the database directory");
+        }
+
+        try (InputStream input = context.getAssets().open(DATABASE_ASSET_PATH);
+             OutputStream output = new FileOutputStream(databaseFile)) {
+            byte[] buffer = new byte[8192];
+            int length;
+            while ((length = input.read(buffer)) > 0) {
+                output.write(buffer, 0, length);
+            }
+        } catch (IOException exception) {
+            throw new IllegalStateException("Could not copy the bundled database", exception);
+        }
+
+        return DATABASE_NAME;
     }
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        db.execSQL(CREATE_SPELLS_TABLE);
-        insertStarterSpell(db);
+        db.execSQL(
+                "CREATE TABLE IF NOT EXISTS " + TABLE_SPELLS + " (" +
+                        COLUMN_ID + " INTEGER PRIMARY KEY, " +
+                        COLUMN_NAME + " TEXT NOT NULL, " +
+                        COLUMN_LEVEL + " INTEGER, " +
+                        COLUMN_DESCRIPTION + " TEXT" +
+                        ")"
+        );
+        createStatsTables(db);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_SPELLS);
-        onCreate(db);
-    }
-
-    public void ensureSeedData() {
-        SQLiteDatabase db = getWritableDatabase();
-        try (Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM " + TABLE_SPELLS, null)) {
-            if (cursor.moveToFirst() && cursor.getInt(0) == 0) {
-                insertStarterSpell(db);
-            }
+        if (oldVersion < 2) {
+            createStatsTables(db);
         }
     }
 
-    private static void insertStarterSpell(SQLiteDatabase db) {
-        ContentValues values = new ContentValues();
-        values.put(COLUMN_NAME, "Banshee's Scream");
-        values.put(COLUMN_LEVEL, 2);
-        values.put(COLUMN_CLASS_NAME, "Necromancer");
-        values.put(COLUMN_RANGE, "Close");
-        values.put(COLUMN_ATTACK_TYPE, "6 ft cone");
-        values.put(COLUMN_DAMAGE_TYPE, "Necrotic");
-        values.put(COLUMN_DAMAGE, "6d4");
-        db.insert(TABLE_SPELLS, null, values);
+    @Override
+    public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        if (oldVersion == 3 && newVersion == 2) {
+            db.execSQL("DROP TABLE IF EXISTS app_character_state");
+            return;
+        }
+        super.onDowngrade(db, oldVersion, newVersion);
     }
+
+    private static void createStatsTables(SQLiteDatabase db) {
+        db.execSQL(
+                "CREATE TABLE IF NOT EXISTS character_combat_state (" +
+                        "character_id INTEGER PRIMARY KEY, " +
+                        "armor_class INTEGER NOT NULL DEFAULT 10, " +
+                        "speed INTEGER NOT NULL DEFAULT 30, " +
+                        "current_hit_points INTEGER NOT NULL DEFAULT 0, " +
+                        "maximum_hit_points INTEGER NOT NULL DEFAULT 0, " +
+                        "temporary_hit_points INTEGER NOT NULL DEFAULT 0, " +
+                        "FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE" +
+                        ")"
+        );
+        db.execSQL(
+                "CREATE TABLE IF NOT EXISTS character_detail_option (" +
+                        "id INTEGER PRIMARY KEY, " +
+                        "option_type TEXT NOT NULL, " +
+                        "background_id INTEGER, " +
+                        "value TEXT NOT NULL, " +
+                        "description TEXT, " +
+                        "sort_order INTEGER NOT NULL DEFAULT 0, " +
+                        "FOREIGN KEY (background_id) REFERENCES background(id) ON DELETE CASCADE" +
+                        ")"
+        );
+    }
+
 }
