@@ -46,6 +46,13 @@ BEGIN
     SELECT RAISE(ABORT, 'characters.class_id is required');
 END;
 
+CREATE TRIGGER IF NOT EXISTS characters_max_count_insert
+BEFORE INSERT ON characters
+WHEN (SELECT COUNT(*) FROM characters) >= 20
+BEGIN
+    SELECT RAISE(ABORT, 'maximum character count is 20');
+END;
+
 INSERT OR IGNORE INTO class(id, name, caster_type, hit_dice) VALUES
 (1, 'Bard', 'full', 8),
 (2, 'Barbarian', 'none', 12),

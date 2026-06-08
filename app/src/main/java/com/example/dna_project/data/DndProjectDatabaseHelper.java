@@ -233,6 +233,7 @@ public class DndProjectDatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("CREATE TABLE IF NOT EXISTS character_detail_option (id INTEGER PRIMARY KEY, option_type TEXT NOT NULL, value TEXT NOT NULL, UNIQUE(option_type, value))");
         db.execSQL("CREATE TRIGGER IF NOT EXISTS characters_class_required_insert BEFORE INSERT ON characters WHEN NEW.class_id IS NULL BEGIN SELECT RAISE(ABORT, 'characters.class_id is required'); END");
         db.execSQL("CREATE TRIGGER IF NOT EXISTS characters_class_required_update BEFORE UPDATE OF class_id ON characters WHEN NEW.class_id IS NULL BEGIN SELECT RAISE(ABORT, 'characters.class_id is required'); END");
+        db.execSQL("CREATE TRIGGER IF NOT EXISTS characters_max_count_insert BEFORE INSERT ON characters WHEN (SELECT COUNT(*) FROM characters) >= 20 BEGIN SELECT RAISE(ABORT, 'maximum character count is 20'); END");
     }
 
     private static void addColumnIfMissing(SQLiteDatabase db, String table, String column, String type) {
