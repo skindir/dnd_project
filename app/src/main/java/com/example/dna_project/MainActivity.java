@@ -109,29 +109,144 @@ public class MainActivity extends AppCompatActivity {
 
     // Spellbook: built-in spell library used when adding spells to a character.
     private static final SpellDefinition[] SPELL_LIBRARY = {
-            new SpellDefinition("Fire Bolt", 0, "Wizard,Sorcerer,Artificer", "Ranged spell attack. Deals fire damage. Cantrip, does not spend spell uses."),
-            new SpellDefinition("Mage Hand", 0, "Wizard,Sorcerer,Warlock,Bard,Artificer", "Creates a spectral hand for simple interactions. Cantrip, does not spend spell uses."),
-            new SpellDefinition("Guidance", 0, "Cleric,Druid,Artificer", "Adds 1d4 to one ability check. Cantrip, does not spend spell uses."),
-            new SpellDefinition("Sacred Flame", 0, "Cleric", "Radiant flame forces a Dexterity save. Cantrip, does not spend spell uses."),
-            new SpellDefinition("Magic Missile", 1, "Wizard,Sorcerer", "Three darts automatically hit targets and deal force damage."),
-            new SpellDefinition("Cure Wounds", 1, "Cleric,Druid,Bard,Paladin,Ranger,Artificer", "Touch a creature to restore hit points."),
-            new SpellDefinition("Shield", 1, "Wizard,Sorcerer,Artificer", "Reaction. Gain +5 AC until the start of your next turn."),
-            new SpellDefinition("Thunderwave", 1, "Wizard,Sorcerer,Bard,Druid", "A wave of thunder pushes creatures and deals thunder damage."),
-            new SpellDefinition("Misty Step", 2, "Wizard,Sorcerer,Warlock", "Bonus action teleport up to 30 feet."),
-            new SpellDefinition("Scorching Ray", 2, "Wizard,Sorcerer", "Create three fire rays and make ranged spell attacks."),
-            new SpellDefinition("Lesser Restoration", 2, "Cleric,Druid,Bard,Paladin,Ranger,Artificer", "End one disease or condition on a creature."),
-            new SpellDefinition("Fireball", 3, "Wizard,Sorcerer", "A bright explosion deals fire damage in a large area."),
-            new SpellDefinition("Counterspell", 3, "Wizard,Sorcerer,Warlock", "Reaction. Interrupt a creature casting a spell."),
-            new SpellDefinition("Revivify", 3, "Cleric,Paladin,Artificer", "Return a recently dead creature to life."),
-            new SpellDefinition("Polymorph", 4, "Wizard,Sorcerer,Bard,Druid", "Transform a creature into a beast."),
-            new SpellDefinition("Wall of Fire", 4, "Wizard,Sorcerer,Druid", "Create a wall of flame that deals fire damage."),
-            new SpellDefinition("Cone of Cold", 5, "Wizard,Sorcerer", "A blast of cold air deals cold damage in a cone."),
-            new SpellDefinition("Mass Cure Wounds", 5, "Cleric,Druid,Bard", "Restore hit points to several creatures at once."),
-            new SpellDefinition("Disintegrate", 6, "Wizard,Sorcerer", "A green ray deals heavy force damage."),
-            new SpellDefinition("Heal", 6, "Cleric,Druid", "A creature regains a large amount of hit points."),
-            new SpellDefinition("Teleport", 7, "Wizard,Sorcerer,Bard", "Instantly transport yourself and companions."),
-            new SpellDefinition("Power Word Stun", 8, "Wizard,Sorcerer,Bard,Warlock", "Stun a creature with 150 hit points or fewer."),
-            new SpellDefinition("Wish", 9, "Wizard,Sorcerer", "The mightiest spell, capable of reshaping reality.")
+            new SpellDefinition(
+                    "Fire Bolt",
+                    0,
+                    "Wizard,Sorcerer,Artificer",
+                    "Ranged spell attack. Deals fire damage. Cantrip, does not spend spell uses."
+            ),
+            new SpellDefinition(
+                    "Mage Hand",
+                    0,
+                    "Wizard,Sorcerer,Warlock,Bard,Artificer",
+                    "Creates a spectral hand for simple interactions. Cantrip, does not spend spell uses."
+            ),
+            new SpellDefinition(
+                    "Guidance",
+                    0,
+                    "Cleric,Druid,Artificer",
+                    "Adds 1d4 to one ability check. Cantrip, does not spend spell uses."
+            ),
+            new SpellDefinition(
+                    "Sacred Flame",
+                    0,
+                    "Cleric",
+                    "Radiant flame forces a Dexterity save. Cantrip, does not spend spell uses."
+            ),
+            new SpellDefinition(
+                    "Magic Missile",
+                    1,
+                    "Wizard,Sorcerer",
+                    "Three darts automatically hit targets and deal force damage."
+            ),
+            new SpellDefinition(
+                    "Cure Wounds",
+                    1,
+                    "Cleric,Druid,Bard,Paladin,Ranger,Artificer",
+                    "Touch a creature to restore hit points."
+            ),
+            new SpellDefinition(
+                    "Shield",
+                    1,
+                    "Wizard,Sorcerer,Artificer",
+                    "Reaction. Gain +5 AC until the start of your next turn."
+            ),
+            new SpellDefinition(
+                    "Thunderwave",
+                    1,
+                    "Wizard,Sorcerer,Bard,Druid",
+                    "A wave of thunder pushes creatures and deals thunder damage."
+            ),
+            new SpellDefinition(
+                    "Misty Step",
+                    2,
+                    "Wizard,Sorcerer,Warlock",
+                    "Bonus action teleport up to 30 feet."
+            ),
+            new SpellDefinition(
+                    "Scorching Ray",
+                    2,
+                    "Wizard,Sorcerer",
+                    "Create three fire rays and make ranged spell attacks."
+            ),
+            new SpellDefinition(
+                    "Lesser Restoration",
+                    2,
+                    "Cleric,Druid,Bard,Paladin,Ranger,Artificer",
+                    "End one disease or condition on a creature."
+            ),
+            new SpellDefinition(
+                    "Fireball",
+                    3,
+                    "Wizard,Sorcerer",
+                    "A bright explosion deals fire damage in a large area."
+            ),
+            new SpellDefinition(
+                    "Counterspell",
+                    3,
+                    "Wizard,Sorcerer,Warlock",
+                    "Reaction. Interrupt a creature casting a spell."
+            ),
+            new SpellDefinition(
+                    "Revivify",
+                    3,
+                    "Cleric,Paladin,Artificer",
+                    "Return a recently dead creature to life."
+            ),
+            new SpellDefinition(
+                    "Polymorph",
+                    4,
+                    "Wizard,Sorcerer,Bard,Druid",
+                    "Transform a creature into a beast."
+            ),
+            new SpellDefinition(
+                    "Wall of Fire",
+                    4,
+                    "Wizard,Sorcerer,Druid",
+                    "Create a wall of flame that deals fire damage."
+            ),
+            new SpellDefinition(
+                    "Cone of Cold",
+                    5,
+                    "Wizard,Sorcerer",
+                    "A blast of cold air deals cold damage in a cone."
+            ),
+            new SpellDefinition(
+                    "Mass Cure Wounds",
+                    5,
+                    "Cleric,Druid,Bard",
+                    "Restore hit points to several creatures at once."
+            ),
+            new SpellDefinition(
+                    "Disintegrate",
+                    6,
+                    "Wizard,Sorcerer",
+                    "A green ray deals heavy force damage."
+            ),
+            new SpellDefinition(
+                    "Heal",
+                    6,
+                    "Cleric,Druid",
+                    "A creature regains a large amount of hit points."
+            ),
+            new SpellDefinition(
+                    "Teleport",
+                    7,
+                    "Wizard,Sorcerer,Bard",
+                    "Instantly transport yourself and companions."
+            ),
+            new SpellDefinition(
+                    "Power Word Stun",
+                    8,
+                    "Wizard,Sorcerer,Bard,Warlock",
+                    "Stun a creature with 150 hit points or fewer."
+            ),
+            new SpellDefinition(
+                    "Wish",
+                    9,
+                    "Wizard,Sorcerer",
+                    "The mightiest spell, capable of reshaping reality."
+            )
     };
     private static final String[] RACE_OPTIONS = {
             "Hill Dwarf",
@@ -505,11 +620,23 @@ public class MainActivity extends AppCompatActivity {
             boolean[] dialogSelections = languageSelections.clone();
             new AlertDialog.Builder(this)
                     .setTitle("Choose Languages")
-                    .setMultiChoiceItems(optionNames(languageOptions), dialogSelections, (dialog, which, isChecked) ->
-                            dialogSelections[which] = isChecked)
+                    .setMultiChoiceItems(
+                            optionNames(languageOptions),
+                            dialogSelections,
+                            (dialog, which, isChecked) -> dialogSelections[which] = isChecked
+                    )
                     .setPositiveButton("Done", (dialog, which) -> {
-                        System.arraycopy(dialogSelections, 0, languageSelections, 0, languageSelections.length);
-                        selectedLanguagesLabel.setText("Languages: " + selectionSummary(collectSelectedNames(languageOptions, languageSelections)));
+                        System.arraycopy(
+                                dialogSelections,
+                                0,
+                                languageSelections,
+                                0,
+                                languageSelections.length
+                        );
+                        selectedLanguagesLabel.setText(
+                                "Languages: "
+                                        + selectionSummary(collectSelectedNames(languageOptions, languageSelections))
+                        );
                     })
                     .setNegativeButton("Cancel", null)
                     .show();
@@ -525,11 +652,26 @@ public class MainActivity extends AppCompatActivity {
             boolean[] dialogSelections = savingThrowSelections.clone();
             new AlertDialog.Builder(this)
                     .setTitle("Choose Saving Throws")
-                    .setMultiChoiceItems(optionNames(proficiencyOptions), dialogSelections, (dialog, which, isChecked) ->
-                            dialogSelections[which] = isChecked)
+                    .setMultiChoiceItems(
+                            optionNames(proficiencyOptions),
+                            dialogSelections,
+                            (dialog, which, isChecked) -> dialogSelections[which] = isChecked
+                    )
                     .setPositiveButton("Done", (dialog, which) -> {
-                        System.arraycopy(dialogSelections, 0, savingThrowSelections, 0, savingThrowSelections.length);
-                        selectedSavingThrowsLabel.setText("Saving Throws: " + selectionSummary(collectSelectedNames(proficiencyOptions, savingThrowSelections)));
+                        System.arraycopy(
+                                dialogSelections,
+                                0,
+                                savingThrowSelections,
+                                0,
+                                savingThrowSelections.length
+                        );
+                        selectedSavingThrowsLabel.setText(
+                                "Saving Throws: "
+                                        + selectionSummary(collectSelectedNames(
+                                                proficiencyOptions,
+                                                savingThrowSelections
+                                        ))
+                        );
                     })
                     .setNegativeButton("Cancel", null)
                     .show();
@@ -557,12 +699,72 @@ public class MainActivity extends AppCompatActivity {
         abilityGrid.setUseDefaultMargins(true);
         screen.addView(abilityGrid);
 
-        addAbilityControl(abilityGrid, "Strength", abilityValues, 0, remainingAbilityPoints, remainingAbilityPointsLabel, abilityValueViews, abilityButtons, abilityTouched);
-        addAbilityControl(abilityGrid, "Dexterity", abilityValues, 1, remainingAbilityPoints, remainingAbilityPointsLabel, abilityValueViews, abilityButtons, abilityTouched);
-        addAbilityControl(abilityGrid, "Constitution", abilityValues, 2, remainingAbilityPoints, remainingAbilityPointsLabel, abilityValueViews, abilityButtons, abilityTouched);
-        addAbilityControl(abilityGrid, "Intelligence", abilityValues, 3, remainingAbilityPoints, remainingAbilityPointsLabel, abilityValueViews, abilityButtons, abilityTouched);
-        addAbilityControl(abilityGrid, "Charisma", abilityValues, 4, remainingAbilityPoints, remainingAbilityPointsLabel, abilityValueViews, abilityButtons, abilityTouched);
-        addAbilityControl(abilityGrid, "Wisdom", abilityValues, 5, remainingAbilityPoints, remainingAbilityPointsLabel, abilityValueViews, abilityButtons, abilityTouched);
+        addAbilityControl(
+                abilityGrid,
+                "Strength",
+                abilityValues,
+                0,
+                remainingAbilityPoints,
+                remainingAbilityPointsLabel,
+                abilityValueViews,
+                abilityButtons,
+                abilityTouched
+        );
+        addAbilityControl(
+                abilityGrid,
+                "Dexterity",
+                abilityValues,
+                1,
+                remainingAbilityPoints,
+                remainingAbilityPointsLabel,
+                abilityValueViews,
+                abilityButtons,
+                abilityTouched
+        );
+        addAbilityControl(
+                abilityGrid,
+                "Constitution",
+                abilityValues,
+                2,
+                remainingAbilityPoints,
+                remainingAbilityPointsLabel,
+                abilityValueViews,
+                abilityButtons,
+                abilityTouched
+        );
+        addAbilityControl(
+                abilityGrid,
+                "Intelligence",
+                abilityValues,
+                3,
+                remainingAbilityPoints,
+                remainingAbilityPointsLabel,
+                abilityValueViews,
+                abilityButtons,
+                abilityTouched
+        );
+        addAbilityControl(
+                abilityGrid,
+                "Charisma",
+                abilityValues,
+                4,
+                remainingAbilityPoints,
+                remainingAbilityPointsLabel,
+                abilityValueViews,
+                abilityButtons,
+                abilityTouched
+        );
+        addAbilityControl(
+                abilityGrid,
+                "Wisdom",
+                abilityValues,
+                5,
+                remainingAbilityPoints,
+                remainingAbilityPointsLabel,
+                abilityValueViews,
+                abilityButtons,
+                abilityTouched
+        );
         addCounterControl(abilityGrid, "Perception", perceptionValue, 0, abilityButtons);
         setButtonsEnabled(abilityButtons, false);
         screen.addView(remainingAbilityPointsLabel);
@@ -2163,18 +2365,48 @@ public class MainActivity extends AppCompatActivity {
         GridLayout combatGrid = new GridLayout(this);
         combatGrid.setColumnCount(wideLayout() ? 5 : 2);
         combatGrid.setUseDefaultMargins(false);
-        addCombatCell(combatGrid, "Armor Class", String.valueOf(selectedCharacter.armorClass), true);
-        addCombatCell(combatGrid, "Initiative", String.valueOf(selectedCharacter.initiative), false);
+        addCombatCell(
+                combatGrid,
+                "Armor Class",
+                String.valueOf(selectedCharacter.armorClass),
+                true
+        );
+        addCombatCell(
+                combatGrid,
+                "Initiative",
+                String.valueOf(selectedCharacter.initiative),
+                false
+        );
         addCombatCell(combatGrid, "Speed", String.valueOf(selectedCharacter.speed), false);
-        addCombatCell(combatGrid, "Proficiency Bonus", String.valueOf(selectedCharacter.proficiencyBonus), false);
-        addCombatCell(combatGrid, "Passive Wisdom", String.valueOf(selectedCharacter.perception), false);
+        addCombatCell(
+                combatGrid,
+                "Proficiency Bonus",
+                String.valueOf(selectedCharacter.proficiencyBonus),
+                false
+        );
+        addCombatCell(
+                combatGrid,
+                "Passive Wisdom",
+                String.valueOf(selectedCharacter.perception),
+                false
+        );
         section.addView(combatGrid);
 
         LinearLayout hp = new LinearLayout(this);
         hp.setOrientation(wideLayout() ? LinearLayout.HORIZONTAL : LinearLayout.VERTICAL);
         hp.setPadding(0, dp(8), 0, 0);
-        addHpPanel(hp, "Current Hit Points", String.valueOf(selectedCharacter.currentHp), "Maximum: " + selectedCharacter.maxHp);
-        addHpPanel(hp, "Temporary Hit Points", String.valueOf(selectedCharacter.temporaryHp), "Protection beyond maximum");
+        addHpPanel(
+                hp,
+                "Current Hit Points",
+                String.valueOf(selectedCharacter.currentHp),
+                "Maximum: " + selectedCharacter.maxHp
+        );
+        addHpPanel(
+                hp,
+                "Temporary Hit Points",
+                String.valueOf(selectedCharacter.temporaryHp),
+                "Protection beyond maximum"
+        );
         addHpPanel(hp, "Hit Dice", selectedCharacter.hitDice, "Total: " + selectedCharacter.level);
         section.addView(hp);
         parent.addView(section);
@@ -2373,18 +2605,60 @@ public class MainActivity extends AppCompatActivity {
     private void addAbilitySection(LinearLayout parent, List<String> selectedSavingThrows) {
         LinearLayout section = sheetSection("Ability Scores");
 
-        addAbilityRow(section, "Strength", "STR", selectedCharacter.strength,
-                new String[]{"Saving Throw (Strength)"}, new String[]{"Athletics"}, selectedSavingThrows);
-        addAbilityRow(section, "Dexterity", "DEX", selectedCharacter.dexterity,
-                new String[]{"Saving Throw (Dexterity)"}, new String[]{"Acrobatics", "Sleight of Hand", "Stealth"}, selectedSavingThrows);
-        addAbilityRow(section, "Constitution", "CON", selectedCharacter.constitution,
-                new String[]{"Saving Throw (Constitution)"}, new String[]{}, selectedSavingThrows);
-        addAbilityRow(section, "Intelligence", "INT", selectedCharacter.intelligence,
-                new String[]{"Saving Throw (Intelligence)"}, new String[]{"Arcana", "History", "Investigation", "Nature", "Religion"}, selectedSavingThrows);
-        addAbilityRow(section, "Wisdom", "WIS", selectedCharacter.wisdom,
-                new String[]{"Saving Throw (Wisdom)"}, new String[]{"Animal Handling", "Insight", "Medicine", "Perception", "Survival"}, selectedSavingThrows);
-        addAbilityRow(section, "Charisma", "CHA", selectedCharacter.charisma,
-                new String[]{"Saving Throw (Charisma)"}, new String[]{"Deception", "Intimidation", "Performance", "Persuasion"}, selectedSavingThrows);
+        addAbilityRow(
+                section,
+                "Strength",
+                "STR",
+                selectedCharacter.strength,
+                new String[]{"Saving Throw (Strength)"},
+                new String[]{"Athletics"},
+                selectedSavingThrows
+        );
+        addAbilityRow(
+                section,
+                "Dexterity",
+                "DEX",
+                selectedCharacter.dexterity,
+                new String[]{"Saving Throw (Dexterity)"},
+                new String[]{"Acrobatics", "Sleight of Hand", "Stealth"},
+                selectedSavingThrows
+        );
+        addAbilityRow(
+                section,
+                "Constitution",
+                "CON",
+                selectedCharacter.constitution,
+                new String[]{"Saving Throw (Constitution)"},
+                new String[]{},
+                selectedSavingThrows
+        );
+        addAbilityRow(
+                section,
+                "Intelligence",
+                "INT",
+                selectedCharacter.intelligence,
+                new String[]{"Saving Throw (Intelligence)"},
+                new String[]{"Arcana", "History", "Investigation", "Nature", "Religion"},
+                selectedSavingThrows
+        );
+        addAbilityRow(
+                section,
+                "Wisdom",
+                "WIS",
+                selectedCharacter.wisdom,
+                new String[]{"Saving Throw (Wisdom)"},
+                new String[]{"Animal Handling", "Insight", "Medicine", "Perception", "Survival"},
+                selectedSavingThrows
+        );
+        addAbilityRow(
+                section,
+                "Charisma",
+                "CHA",
+                selectedCharacter.charisma,
+                new String[]{"Saving Throw (Charisma)"},
+                new String[]{"Deception", "Intimidation", "Performance", "Persuasion"},
+                selectedSavingThrows
+        );
 
         parent.addView(section);
     }
