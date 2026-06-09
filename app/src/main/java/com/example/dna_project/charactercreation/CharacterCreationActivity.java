@@ -10,6 +10,7 @@ import android.text.TextWatcher;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.GridLayout;
@@ -67,7 +68,7 @@ abstract class CharacterCreationActivity extends CharacterListActivity {
         List<DbOption> raceOptions = projectDatabase.getOptions("race");
         List<DbOption> backgroundOptions = projectDatabase.getOptions("background");
         List<DbOption> languageOptions = projectDatabase.getOptions("language");
-        List<DbOption> proficiencyOptions = projectDatabase.getOptions("proficiency");
+        List<DbOption> proficiencyOptions = projectDatabase.getSkillAndSavingThrowOptions();
         List<DbOption> alignmentOptions = projectDatabase.getCharacterDetailOptions("alignment");
         List<DbOption> personalityTraitOptions = projectDatabase.getCharacterDetailOptions("personality_traits");
         List<DbOption> idealOptions = projectDatabase.getCharacterDetailOptions("ideals");
@@ -239,31 +240,7 @@ abstract class CharacterCreationActivity extends CharacterListActivity {
         final boolean[] savingThrowSelections = new boolean[proficiencyOptions.size()];
         savingThrowsButton.setOnClickListener(view -> {
             boolean[] dialogSelections = savingThrowSelections.clone();
-            new AlertDialog.Builder(this)
-                    .setTitle("Choose Saving Throws")
-                    .setMultiChoiceItems(
-                            optionNames(proficiencyOptions),
-                            dialogSelections,
-                            (dialog, which, isChecked) -> dialogSelections[which] = isChecked
-                    )
-                    .setPositiveButton("Done", (dialog, which) -> {
-                        System.arraycopy(
-                                dialogSelections,
-                                0,
-                                savingThrowSelections,
-                                0,
-                                savingThrowSelections.length
-                        );
-                        selectedSavingThrowsLabel.setText(
-                                "Saving Throws: "
-                                        + selectionSummary(collectSelectedNames(
-                                                proficiencyOptions,
-                                                savingThrowSelections
-                                        ))
-                        );
-                    })
-                    .setNegativeButton("Cancel", null)
-                    .show();
+            showSavingThrowsDialog(proficiencyOptions, dialogSelections, savingThrowSelections, selectedSavingThrowsLabel);
         });
         screen.addView(selectedSavingThrowsLabel);
         screen.addView(savingThrowsButton);
@@ -550,6 +527,123 @@ abstract class CharacterCreationActivity extends CharacterListActivity {
             }
         }
         return savingThrows;
+    }
+
+    private void showSavingThrowsDialog(
+            List<DbOption> proficiencyOptions,
+            boolean[] dialogSelections,
+            boolean[] savingThrowSelections,
+            TextView selectedSavingThrowsLabel
+    ) {
+        ScrollView scrollView = new ScrollView(this);
+        LinearLayout content = verticalLayout(12);
+        content.setPadding(dp(20), dp(12), dp(20), dp(4));
+        scrollView.addView(content);
+
+        addSavingThrowGroup(
+                content,
+                "Strength",
+                proficiencyOptions,
+                dialogSelections,
+                new String[]{"Saving Throw (Strength)", "Athletics"}
+        );
+        addSavingThrowGroup(
+                content,
+                "Dexterity",
+                proficiencyOptions,
+                dialogSelections,
+                new String[]{"Saving Throw (Dexterity)", "Acrobatics", "Sleight of Hand", "Stealth"}
+        );
+        addSavingThrowGroup(
+                content,
+                "Constitution",
+                proficiencyOptions,
+                dialogSelections,
+                new String[]{"Saving Throw (Constitution)"}
+        );
+        addSavingThrowGroup(
+                content,
+                "Intelligence",
+                proficiencyOptions,
+                dialogSelections,
+                new String[]{"Saving Throw (Intelligence)", "Arcana", "History", "Investigation", "Nature", "Religion"}
+        );
+        addSavingThrowGroup(
+                content,
+                "Wisdom",
+                proficiencyOptions,
+                dialogSelections,
+                new String[]{"Saving Throw (Wisdom)", "Animal Handling", "Insight", "Medicine", "Perception", "Survival"}
+        );
+        addSavingThrowGroup(
+                content,
+                "Charisma",
+                proficiencyOptions,
+                dialogSelections,
+                new String[]{"Saving Throw (Charisma)", "Deception", "Intimidation", "Performance", "Persuasion"}
+        );
+
+        new AlertDialog.Builder(this)
+                .setTitle("Choose Saving Throws and Skills")
+                .setView(scrollView)
+                .setPositiveButton("Done", (dialog, which) -> {
+                    System.arraycopy(
+                            dialogSelections,
+                            0,
+                            savingThrowSelections,
+                            0,
+                            savingThrowSelections.length
+                    );
+                    selectedSavingThrowsLabel.setText(
+                            "Saving Throws: "
+                                    + selectionSummary(collectSelectedNames(
+                                            proficiencyOptions,
+                                            savingThrowSelections
+                                    ))
+                    );
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void addSavingThrowGroup(
+            LinearLayout parent,
+            String abilityName,
+            List<DbOption> proficiencyOptions,
+            boolean[] dialogSelections,
+            String[] optionNames
+    ) {
+        LinearLayout group = verticalLayout(4);
+        group.setPadding(0, dp(4), 0, dp(8));
+
+        TextView title = sectionTitle(abilityName);
+        title.setTextSize(18);
+        group.addView(title);
+
+        for (String optionName : optionNames) {
+            int optionIndex = findOptionIndex(proficiencyOptions, optionName);
+            if (optionIndex < 0) {
+                continue;
+            }
+
+            CheckBox checkBox = new CheckBox(this);
+            checkBox.setText(optionName);
+            checkBox.setTextSize(16);
+            checkBox.setChecked(dialogSelections[optionIndex]);
+            checkBox.setOnCheckedChangeListener((buttonView, isChecked) -> dialogSelections[optionIndex] = isChecked);
+            group.addView(checkBox);
+        }
+
+        parent.addView(group);
+    }
+
+    private int findOptionIndex(List<DbOption> options, String optionName) {
+        for (int index = 0; index < options.size(); index++) {
+            if (optionName.equals(options.get(index).name)) {
+                return index;
+            }
+        }
+        return -1;
     }
 
     private String[] optionNames(List<DbOption> options) {
