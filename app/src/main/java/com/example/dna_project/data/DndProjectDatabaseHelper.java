@@ -73,12 +73,30 @@ public class DndProjectDatabaseHelper extends SQLiteOpenHelper {
         ensureReady();
         List<DbOption> options = new ArrayList<>();
         SQLiteDatabase db = getReadableDatabase();
+        String normalizedOptionType = normalizeCharacterDetailOptionType(optionType);
         try (Cursor cursor = db.rawQuery(
-                "SELECT id, value FROM character_detail_option WHERE option_type = ? ORDER BY id",
-                new String[]{optionType}
+                "SELECT MIN(id), value FROM character_detail_option " +
+                        "WHERE option_type = ? GROUP BY value ORDER BY MIN(sort_order), MIN(id)",
+                new String[]{normalizedOptionType}
         )) {
             while (cursor.moveToNext()) {
                 options.add(new DbOption(cursor.getInt(0), cursor.getString(1)));
+            }
+        }
+        return options;
+    }
+
+    public List<DbOption> getSkillAndSavingThrowOptions() {
+        ensureReady();
+        List<DbOption> options = new ArrayList<>();
+        SQLiteDatabase db = getReadableDatabase();
+        try (Cursor cursor = db.rawQuery(
+                "SELECT id, name FROM proficiency " +
+                        "WHERE name LIKE 'Skill:%' OR name LIKE 'Saving Throw:%' ORDER BY id",
+                null
+        )) {
+            while (cursor.moveToNext()) {
+                options.add(new DbOption(cursor.getInt(0), displayProficiencyName(cursor.getString(1))));
             }
         }
         return options;
@@ -230,7 +248,10 @@ public class DndProjectDatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("CREATE TABLE IF NOT EXISTS spell_slots (caster_type TEXT NOT NULL, level INTEGER NOT NULL, level_1 INTEGER, level_2 INTEGER, level_3 INTEGER, level_4 INTEGER, level_5 INTEGER, level_6 INTEGER, level_7 INTEGER, level_8 INTEGER, level_9 INTEGER, PRIMARY KEY (caster_type, level))");
         db.execSQL("CREATE TABLE IF NOT EXISTS class_base_stats (class_id INTEGER PRIMARY KEY, strength INTEGER NOT NULL, constitution INTEGER NOT NULL, dexterity INTEGER NOT NULL, intelligence INTEGER NOT NULL, wisdom INTEGER NOT NULL, charisma INTEGER NOT NULL, FOREIGN KEY (class_id) REFERENCES class(id) ON DELETE CASCADE)");
         db.execSQL("CREATE TABLE IF NOT EXISTS class_proficiency (class_id INTEGER NOT NULL, proficiency_id INTEGER NOT NULL, PRIMARY KEY (class_id, proficiency_id), FOREIGN KEY (class_id) REFERENCES class(id) ON DELETE CASCADE, FOREIGN KEY (proficiency_id) REFERENCES proficiency(id) ON DELETE CASCADE)");
-        db.execSQL("CREATE TABLE IF NOT EXISTS character_detail_option (id INTEGER PRIMARY KEY, option_type TEXT NOT NULL, value TEXT NOT NULL, UNIQUE(option_type, value))");
+        db.execSQL("CREATE TABLE IF NOT EXISTS character_detail_option (id INTEGER PRIMARY KEY, option_type TEXT NOT NULL, background_id INTEGER, value TEXT NOT NULL, description TEXT, sort_order INTEGER, UNIQUE(option_type, value))");
+        addColumnIfMissing(db, "character_detail_option", "background_id", "INTEGER");
+        addColumnIfMissing(db, "character_detail_option", "description", "TEXT");
+        addColumnIfMissing(db, "character_detail_option", "sort_order", "INTEGER");
         db.execSQL("CREATE TRIGGER IF NOT EXISTS characters_class_required_insert BEFORE INSERT ON characters WHEN NEW.class_id IS NULL BEGIN SELECT RAISE(ABORT, 'characters.class_id is required'); END");
         db.execSQL("CREATE TRIGGER IF NOT EXISTS characters_class_required_update BEFORE UPDATE OF class_id ON characters WHEN NEW.class_id IS NULL BEGIN SELECT RAISE(ABORT, 'characters.class_id is required'); END");
     }
@@ -253,12 +274,41 @@ public class DndProjectDatabaseHelper extends SQLiteOpenHelper {
         insertNamedRows(db, "language", new String[]{"Abyssal", "Druidic", "Giant", "Infernal", "Thieves' Cant", "Celestial", "Undercommon", "Primordial", "Common", "Orc", "Elvish", "Gnomish", "Goblin", "Half-Elvish", "Halfling", "Sylvan", "Tiefling", "Aquan"});
         insertNamedRows(db, "proficiency", new String[]{"Saving Throw (Strength)", "Athletics", "Saving Throw (Dexterity)", "Acrobatics", "Sleight of Hand", "Stealth", "Saving Throw (Constitution)", "Saving Throw (Intelligence)", "Arcana", "History", "Investigation", "Nature", "Religion", "Saving Throw (Wisdom)", "Animal Handling", "Insight", "Medicine", "Perception", "Survival", "Saving Throw (Charisma)", "Deception", "Intimidation", "Performance", "Persuasion"});
         insertDetailOptions(db, "alignment", new String[]{"Lawful Good", "Neutral Good", "Chaotic Good", "Lawful Neutral", "True Neutral", "Chaotic Neutral", "Lawful Evil", "Neutral Evil", "Chaotic Evil"});
-        insertDetailOptions(db, "personality_traits", new String[]{"I am always polite and respectful", "I trust my friends and protect them", "I am used to seeking profit in any situation", "I speak plainly, even when it is unpleasant", "I stay calm in the face of danger", "I love beautiful stories and glorious deeds", "I find it hard to trust strangers", "I am always seeking new knowledge"});
-        insertDetailOptions(db, "ideals", new String[]{"Good", "Freedom", "Justice", "Honor", "Knowledge", "Power", "Tradition", "Redemption"});
-        insertDetailOptions(db, "bonds", new String[]{"I protect my family", "I serve my people", "I owe my life to an old friend", "I seek a lost relic", "I must avenge the past", "I keep my mentor's secret", "I want to restore my lost honor", "I am bound by oath to an order"});
-        insertDetailOptions(db, "flaws", new String[]{"I am too trusting", "I am greedy for gold", "I am hot-tempered", "I fear losing control", "I often underestimate danger", "I envy the fame of others", "I have trouble admitting mistakes", "I easily give in to temptation"});
+        insertDetailOptions(db, "personality_trait", new String[]{"I am always polite and respectful", "I trust my friends and protect them", "I am used to seeking profit in any situation", "I speak plainly, even when it is unpleasant", "I stay calm in the face of danger", "I love beautiful stories and glorious deeds", "I find it hard to trust strangers", "I am always seeking new knowledge"});
+        insertDetailOptions(db, "ideal", new String[]{"Good", "Freedom", "Justice", "Honor", "Knowledge", "Power", "Tradition", "Redemption"});
+        insertDetailOptions(db, "bond", new String[]{"I protect my family", "I serve my people", "I owe my life to an old friend", "I seek a lost relic", "I must avenge the past", "I keep my mentor's secret", "I want to restore my lost honor", "I am bound by oath to an order"});
+        insertDetailOptions(db, "flaw", new String[]{"I am too trusting", "I am greedy for gold", "I am hot-tempered", "I fear losing control", "I often underestimate danger", "I envy the fame of others", "I have trouble admitting mistakes", "I easily give in to temptation"});
         insertClassBaseStats(db);
         insertClassProficiencies(db);
+    }
+
+    private static String normalizeCharacterDetailOptionType(String optionType) {
+        if ("personality_traits".equals(optionType)) {
+            return "personality_trait";
+        }
+        if ("ideals".equals(optionType)) {
+            return "ideal";
+        }
+        if ("bonds".equals(optionType)) {
+            return "bond";
+        }
+        if ("flaws".equals(optionType)) {
+            return "flaw";
+        }
+        return optionType;
+    }
+
+    private static String displayProficiencyName(String name) {
+        if (name == null) {
+            return "";
+        }
+        if (name.startsWith("Skill: ")) {
+            return name.substring("Skill: ".length());
+        }
+        if (name.startsWith("Saving Throw: ")) {
+            return "Saving Throw (" + name.substring("Saving Throw: ".length()) + ")";
+        }
+        return name;
     }
 
     private static void insertClasses(SQLiteDatabase db) {
