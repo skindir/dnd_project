@@ -478,7 +478,7 @@ public class MainActivity extends AppCompatActivity {
         List<DbOption> raceOptions = projectDatabase.getOptions("race");
         List<DbOption> backgroundOptions = projectDatabase.getOptions("background");
         List<DbOption> languageOptions = projectDatabase.getOptions("language");
-        List<DbOption> proficiencyOptions = projectDatabase.getOptions("proficiency");
+        List<DbOption> proficiencyOptions = projectDatabase.getSkillAndSavingThrowOptions();
         List<DbOption> alignmentOptions = projectDatabase.getCharacterDetailOptions("alignment");
         List<DbOption> personalityTraitOptions = projectDatabase.getCharacterDetailOptions("personality_traits");
         List<DbOption> idealOptions = projectDatabase.getCharacterDetailOptions("ideals");
