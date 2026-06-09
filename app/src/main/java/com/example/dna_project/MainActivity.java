@@ -49,6 +49,7 @@ import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
+    // General app settings and character tab identifiers.
     private static final int MAX_CHARACTERS = 15;
     private static final int TOTAL_ABILITY_POINTS = 75;
 
@@ -59,6 +60,8 @@ public class MainActivity extends AppCompatActivity {
     private static final float EQUIPMENT_DESIGN_WIDTH = 1284f;
     private static final float EQUIPMENT_DESIGN_HEIGHT = 1754f;
     private static final int INVENTORY_COLUMNS = 7;
+
+    // Inventory: backpack categories, item types, and category tab icons.
     private static final String[] INVENTORY_CATEGORIES = {
             "Weapons",
             "Armor",
@@ -86,6 +89,8 @@ public class MainActivity extends AppCompatActivity {
             R.drawable.tab_other,
             R.drawable.tab_key_items
     };
+
+    // Character creation: available classes and selection dictionaries.
     private static final String[] CHARACTER_CLASSES = {
             "Bard",
             "Barbarian",
@@ -101,6 +106,8 @@ public class MainActivity extends AppCompatActivity {
             "Ranger",
             "Sorcerer"
     };
+
+    // Spellbook: built-in spell library used when adding spells to a character.
     private static final SpellDefinition[] SPELL_LIBRARY = {
             new SpellDefinition("Fire Bolt", 0, "Wizard,Sorcerer,Artificer", "Ranged spell attack. Deals fire damage. Cantrip, does not spend spell uses."),
             new SpellDefinition("Mage Hand", 0, "Wizard,Sorcerer,Warlock,Bard,Artificer", "Creates a spectral hand for simple interactions. Cantrip, does not spend spell uses."),
@@ -265,6 +272,7 @@ public class MainActivity extends AppCompatActivity {
 
     };
 
+    // App state: all characters, the currently selected character, and inventory data.
     private final List<DndCharacter> characters = new ArrayList<>();
     private CharacterRepository characterRepository;
     private DndProjectDatabaseHelper projectDatabase;
@@ -291,6 +299,7 @@ public class MainActivity extends AppCompatActivity {
         showCharacterSelect();
     }
 
+    // Character list: selection screen, create-character entry point, and hero deletion.
     private void showCharacterSelect() {
         selectedCharacter = null;
         selectedTab = TAB_STATS;
@@ -336,6 +345,7 @@ public class MainActivity extends AppCompatActivity {
         root.addView(scrollView);
     }
 
+    // Character creation: name, class, race, background, skills, and ability score form.
     private void showCreateCharacter() {
         root.removeAllViews();
 
@@ -698,6 +708,7 @@ public class MainActivity extends AppCompatActivity {
         root.addView(scrollView);
     }
 
+    // Character window: shared container with bottom navigation for inventory, stats, and spells.
     private void showCharacterSheet() {
         if (selectedCharacter == null) {
             showCharacterSelect();
@@ -741,6 +752,7 @@ public class MainActivity extends AppCompatActivity {
         renderTab(content);
     }
 
+    // Character tabs: renders stats, inventory, or spellbook content.
     private void renderTab(FrameLayout content) {
         content.removeAllViews();
 
@@ -792,6 +804,7 @@ public class MainActivity extends AppCompatActivity {
         content.addView(scrollView);
     }
 
+    // Inventory: loads backpack state, money, and equipped items for the selected character.
     private void prepareInventoryTab() {
         if (selectedCharacter == null) {
             return;
@@ -835,6 +848,7 @@ public class MainActivity extends AppCompatActivity {
         return INVENTORY_ITEM_TYPES[selectedInventoryCategory];
     }
 
+    // Inventory: backpack header with money controls and the add-item button.
     private void addBackpackHeader(LinearLayout parent) {
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.HORIZONTAL);
@@ -888,6 +902,7 @@ public class MainActivity extends AppCompatActivity {
         ));
     }
 
+    // Inventory: dialog for changing the character's coin amounts.
     private void showMoneyDialog() {
         LinearLayout dialogBody = verticalLayout(10);
         dialogBody.setPadding(dp(16), dp(8), dp(16), 0);
@@ -1008,6 +1023,7 @@ public class MainActivity extends AppCompatActivity {
         return amount;
     }
 
+    // Inventory: category tabs, item grid, and bottom coin row.
     private void addBackpackLayout(LinearLayout parent, FrameLayout content) {
         LinearLayout backpack = verticalLayout(8);
         backpack.setPadding(dp(8), dp(8), dp(8), dp(8));
@@ -1127,6 +1143,7 @@ public class MainActivity extends AppCompatActivity {
         ));
     }
 
+    // Inventory: searches database items and adds selected items to the backpack.
     private void showAddItemDialog(String defaultType) {
         LinearLayout body = verticalLayout(10);
         body.setPadding(dp(16), dp(8), dp(16), 0);
@@ -1248,6 +1265,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // Inventory: item details card with equip, unequip, and remove actions.
     private void showItemDetails(int bagItemId) {
         InventoryItem item = inventoryRepository.getBagItemDetails(bagItemId, inventoryState.equipmentId);
         if (item == null) {
@@ -1525,6 +1543,7 @@ public class MainActivity extends AppCompatActivity {
         return normalized.length() > 96 ? normalized.substring(0, 93) + "..." : normalized;
     }
 
+    // Character list: one hero row in the selection screen.
     private View characterRow(DndCharacter character) {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
@@ -1581,6 +1600,7 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
+    // Inventory: visual equipment layout for the selected character.
     private void addEquipmentLayout(LinearLayout parent) {
         FrameLayout equipment = new AspectRatioFrameLayout(this);
         equipment.setBackgroundResource(R.drawable.dnd_slot_bg);
@@ -1701,6 +1721,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // Spellbook: restores available spell uses after rest.
     private void restoreSpellUses(String restName) {
         selectedCharacter.currentSpellUses = selectedCharacter.maxSpellUses;
         saveCharacters();
@@ -1708,6 +1729,7 @@ public class MainActivity extends AppCompatActivity {
         showCharacterSheet();
     }
 
+    // Spellbook: indicator for remaining spell uses.
     private void addSpellUseCells(LinearLayout parent) {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
@@ -1750,6 +1772,7 @@ public class MainActivity extends AppCompatActivity {
         return 1;
     }
 
+    // Spellbook: list of spell levels for the character.
     private void addSpellLevels(LinearLayout parent) {
         for (int level = 0; level <= 9; level++) {
             parent.addView(spellLevelFrame(level));
@@ -1795,6 +1818,7 @@ public class MainActivity extends AppCompatActivity {
         return frame;
     }
 
+    // Spellbook: selects a new spell from the available library.
     private void showAddSpellDialog(int presetLevel) {
         List<SpellDefinition> availableSpells = availableSpellsFor(presetLevel);
         if (availableSpells.isEmpty()) {
@@ -2082,6 +2106,7 @@ public class MainActivity extends AppCompatActivity {
         parent.addView(row);
     }
 
+    // Character stats window: decorative sheet header.
     private void addSheetHeader(LinearLayout parent) {
         LinearLayout header = verticalLayout(0);
         header.setGravity(Gravity.CENTER);
@@ -2116,6 +2141,7 @@ public class MainActivity extends AppCompatActivity {
         parent.addView(header);
     }
 
+    // Character stats window: identity fields such as name, class, race, and background.
     private void addIdentitySection(LinearLayout parent) {
         LinearLayout section = sheetSection("Character Details");
         section.setPadding(dp(12), dp(9), dp(12), dp(10));
@@ -2131,6 +2157,7 @@ public class MainActivity extends AppCompatActivity {
         parent.addView(section);
     }
 
+    // Character stats window: armor class, hit points, speed, and other combat values.
     private void addCombatSection(LinearLayout parent) {
         LinearLayout section = sheetSection("Combat Stats");
         GridLayout combatGrid = new GridLayout(this);
@@ -2153,6 +2180,7 @@ public class MainActivity extends AppCompatActivity {
         parent.addView(section);
     }
 
+    // Character stats window: personality, ideals, bonds, flaws, and traits.
     private void addCharacterNotesSection(LinearLayout parent) {
         LinearLayout section = sheetSection("Description");
         String[][] notes = {
@@ -2341,6 +2369,7 @@ public class MainActivity extends AppCompatActivity {
         parent.addView(panel, params);
     }
 
+    // Character stats window: ability scores, saving throws, and skill proficiencies.
     private void addAbilitySection(LinearLayout parent, List<String> selectedSavingThrows) {
         LinearLayout section = sheetSection("Ability Scores");
 
@@ -2474,6 +2503,7 @@ public class MainActivity extends AppCompatActivity {
         return getResources().getConfiguration().screenWidthDp >= 600;
     }
 
+    // Character stats window: known languages table.
     private void addLanguagesTable(LinearLayout parent, List<String> languages) {
         LinearLayout table = verticalLayout(0);
         table.setPadding(dp(14), dp(12), dp(14), dp(12));
@@ -2982,6 +3012,7 @@ public class MainActivity extends AppCompatActivity {
         return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
     }
 
+    // Character persistence: loads all saved characters into the character list.
     private void loadCharacters() {
         characters.clear();
         for (CharacterData data : characterRepository.loadCharacters()) {
@@ -2989,12 +3020,14 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // Character persistence: saves the current character list to the repository.
     private void saveCharacters() {
         for (DndCharacter character : characters) {
             character.databaseId = characterRepository.saveCharacter(toDatabase(character));
         }
     }
 
+    // Character persistence: converts an in-memory character to database data.
     private static CharacterData toDatabase(DndCharacter character) {
         CharacterData data = new CharacterData();
         data.id = character.databaseId;
@@ -3031,6 +3064,7 @@ public class MainActivity extends AppCompatActivity {
         return data;
     }
 
+    // Character persistence: rebuilds an in-memory character from database data.
     private static DndCharacter fromDatabase(CharacterData data) {
         DndCharacter character = new DndCharacter(
                 data.name, data.characterClass, data.level, data.strength, data.dexterity,
